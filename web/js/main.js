@@ -224,11 +224,31 @@ function pick(x, y, name) {
   toast(`Added ${s.name} at ${s.lat.toFixed(3)}°, ${s.lon.toFixed(1)}°E`); switchTab('site'); selectSite(s.id, false);
 }
 
+// ------------------------------------------------------------- 30-second demo (open #demo=1, then screen-record)
+function demo() {
+  const cap = (html, title) => { const c = $('caption'); c.innerHTML = html; c.className = title ? 'title' : ''; c.hidden = !html; };
+  const steps = [
+    [0, () => { setMode('explore'); setLayer('light'); SC.overview(); SC.autoRotate(true); $('speed').value = 12; play(true); cap('Hi, we are team Polaris Window.'); }],
+    [2000, () => cap('Landing at the Moon\'s south pole means fighting for sunlight and a line of sight to Earth.')],
+    [5000, () => cap('Polaris Window<small>Know exactly when and where to land</small>', true)],
+    [8500, () => { SC.autoRotate(false); play(false); ST.t = tIndex(Date.parse('2027-03-01T00:00Z')); switchTab('site'); selectSite('ridge'); cap('Built on NASA LOLA terrain and JPL ephemeris: stand at any site and watch the Sun and Earth cross the real horizon.'); }],
+    [11500, () => { $('speed').value = 4; play(true); }],
+    [14000, () => { play(false); switchTab('windows'); runWindows(); cap('Enter your mission length and power and comms limits, and it ranks the best landing dates.'); }],
+    [19000, () => { switchTab('heat'); SC.overview(); SC.autoRotate(true, 1.2); runHeat({ metric: 'land', from: '2027-01-01', to: '2027-12-31' }); cap('Map sunlight, Earth contact and safe flat ground across the whole region…'); }],
+    [23000, () => { switchTab('valid'); cap('…and every result is checked against NASA\'s own illumination maps and JPL Horizons.'); }],
+    [26000, () => { setLayer('light'); $('speed').value = 12; play(true); cap('From mission planners to classrooms: pick your window to the Moon.'); }],
+    [30000, () => { play(false); SC.autoRotate(false); cap('Polaris Window<small>amirtheshwaran.github.io/polaris-window</small>', true); }],
+  ];
+  const t0 = performance.now();
+  for (const [ms, fn] of steps) setTimeout(fn, ms);
+  return t0;
+}
+
 // ------------------------------------------------------------- boot
 (async function () {
   const gl = document.createElement('canvas').getContext('webgl2') || document.createElement('canvas').getContext('webgl');
   if (!gl) { $('loadMsg').innerHTML = 'Polaris Window needs WebGL (3D graphics). Please open it in an up-to-date Chrome, Edge, Firefox or Safari, with hardware acceleration turned on.'; document.querySelector('.spin').style.display = 'none'; return; }
-  const hadHash = location.hash.length > 1;
+  const hadHash = location.hash.length > 1, isDemo = /demo=1/.test(location.hash);
   try { await loadAll(); } catch (e) { $('loadMsg').textContent = 'Could not load data: ' + e.message + '. Please refresh.'; return; }
   ST.t = tIndex(Date.now());
   readHash();
@@ -255,7 +275,8 @@ function pick(x, y, name) {
   addEventListener('resize', () => ST.tab === 'site' && renderSiteTab());
   $$('#wPreset button').forEach(b => b.onclick = () => { preset(b.dataset.p); if ($('wOut').innerHTML) runWindows(); });
   if (!hadHash) $('welcome').hidden = false;
+  if (isDemo) setTimeout(demo, 800);
   $$('#welcome button').forEach(b => b.onclick = () => { $('welcome').hidden = true; const w = b.dataset.w;
     if (w === 'tour') tour(0); else if (w === 'date') { switchTab('windows'); runWindows(); } else { switchTab('site'); selectSite('ridge'); } });
-  window.PW = { ST, D, tour, runWindows, runHeat, selectSite, switchTab }; // console / demo-recording hooks
+  window.PW = { ST, D, tour, runWindows, runHeat, selectSite, switchTab, demo }; // console / demo-recording hooks
 })();

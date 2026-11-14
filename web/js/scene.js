@@ -161,5 +161,6 @@ export function flyTo(s, standing) {
   const p0 = camera.position.clone(), t0 = performance.now();
   (function anim() { const k = Math.min(1, (performance.now() - t0) / 900), e = k * k * (3 - 2 * k); camera.position.lerpVectors(p0, pos, e); if (k < 1) requestAnimationFrame(anim); })();
 }
+export function autoRotate(on, speed = 0.6) { controls.autoRotate = on; controls.autoRotateSpeed = speed; }
 export function overview() { controls.minDistance = .5; controls.target.set(0, 0, 0); camera.position.set(60, 160, 200); }
 export function snapshot() { return renderer.domElement.toDataURL('image/png'); }

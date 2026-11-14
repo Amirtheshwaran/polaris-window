@@ -7,8 +7,8 @@
 <meta name="description" content="Pick when and where to land at the lunar south pole. Real NASA LOLA terrain, SPICE ephemeris, validated against NASA illumination maps.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23111827'/><path d='M4 20 Q16 10 28 20' stroke='%23fbbf24' stroke-width='3' fill='none'/><circle cx='22' cy='9' r='3' fill='%2360a5fa'/></svg>">
 <link rel="stylesheet" href="css/style.css">
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js","three/addons/controls/OrbitControls.js":"./vendor/OrbitControls.js"}}</script>
+<script src="vendor/chart.umd.min.js"></script>
 </head>
 <body>
 <header>
@@ -55,17 +55,18 @@
 
   <aside id="right">
     <nav id="tabs">
-      <button data-tab="site" class="on">Stand at site</button>
-      <button data-tab="windows">Window finder</button>
-      <button data-tab="compare">Compare</button>
-      <button data-tab="heat">Heatmap</button>
-      <button data-tab="valid">Validation</button>
-      <button data-tab="about">About</button>
+      <button data-tab="site" class="on">🧍 Stand at site</button>
+      <button data-tab="windows">📅 Best landing date</button>
+      <button data-tab="compare">⚖️ Compare</button>
+      <button data-tab="heat">🗺️ Heatmap</button>
+      <button data-tab="valid">✅ NASA check</button>
+      <button data-tab="about">ℹ️ About</button>
     </nav>
 
     <div class="tab on" id="tab-site">
       <h2 id="siteName">-</h2>
       <p id="siteMeta" class="meta"></p>
+      <div id="verdict"></div>
       <canvas id="pano" height="300"></canvas>
       <div class="panoLegend"><span class="k sun"></span>Sun path (next 29.5 days) <span class="k earth"></span>Earth path <span class="k dark"></span>Below terrain</div>
       <div id="siteStats" class="stats"></div>
@@ -74,16 +75,20 @@
     </div>
 
     <div class="tab" id="tab-windows">
-      <h2>Auto window finder</h2>
-      <p class="meta">Ranks every possible landing date (2026–2030) for each site against your mission constraints.</p>
+      <h2>📅 When should we land?</h2>
+      <p class="meta">Like a weather forecast for the Moon: we check every possible landing time from 2026 to 2030 at every site and rank the best ones.</p>
+      <div class="seg" id="wPreset"><button data-p="bal" class="on">⚖️ Balanced</button><button data-p="power">☀️ Most power</button><button data-p="comms">📡 Always talk to Earth</button></div>
       <div class="form">
-        <label>Mission length <input type="number" id="wLen" value="14" min="1" max="90"> days</label>
+        <label>🕒 How long is the mission? <input type="number" id="wLen" value="14" min="1" max="90"> days</label>
+        <div class="planner-only">
         <label>Min sunlight <input type="number" id="wSun" value="60" min="0" max="100"> %</label>
         <label>Min Earth visibility <input type="number" id="wEarth" value="50" min="0" max="100"> %</label>
         <label>Max continuous darkness <input type="number" id="wDark" value="72" min="0" max="2000"> h</label>
         <label>Max comms blackout <input type="number" id="wBlack" value="96" min="0" max="2000"> h</label>
         <label>Search from <input type="date" id="wFrom" value="2027-01-01"> to <input type="date" id="wTo" value="2028-12-31"></label>
         <label>Sites <select id="wSites"><option value="all">All sites</option><option value="sel">Selected site only</option></select></label>
+        </div>
+        <p class="hint explore-only">Switch to <b>Planner</b> mode (top right) to set exact power and comms limits.</p>
       </div>
       <button class="primary" id="wRun">Find best landing windows</button>
       <div id="wOut"></div>
@@ -121,7 +126,14 @@
 </main>
 <div id="labels"></div>
 <div id="toast" hidden></div>
-<div id="loading"><div class="spin"></div><p>Loading LOLA terrain and SPICE ephemeris…</p></div>
+<div id="loading"><div class="spin"></div><p id="loadMsg">Loading real NASA Moon terrain…</p></div>
+<div id="welcome" hidden><div class="wcard">
+  <h1>🌙 Where and when should astronauts land?</h1>
+  <p>The Moon's south pole has <b>frozen water</b>, but the Sun only peeks over the horizon there, and tall mountains can hide the <b>Sun</b> (no solar power) or the <b>Earth</b> (no radio home).</p>
+  <p>Polaris Window uses real NASA maps of the Moon to find the best <b>place</b> and <b>date</b> to land. It works like a weather forecast for the Moon.</p>
+  <div class="wbtns"><button data-w="tour" class="primary">▶ Take the 1-minute tour</button><button data-w="explore">🧍 Explore a landing site</button><button data-w="date">📅 Find the best landing date</button></div>
+  <p class="hint">Built with NASA LRO LOLA terrain, NASA/JPL SPICE ephemeris and JPL Horizons, and checked against NASA's published sunlight maps.</p>
+</div></div>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -62,3 +62,19 @@ td.good{color:var(--ok)}td.bad{color:var(--bad)}
 body.explore .planner-only{display:none}
 @media (max-width:1000px){html,body{overflow:auto}main{grid-template-columns:1fr;height:auto}#center{height:60vh}#left,#right{border:0}header span{display:none}}
 a{color:#fbbf24}
+#welcome{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:25;padding:16px}
+.wcard{max-width:620px;background:var(--panel);border:1px solid var(--sun);border-radius:14px;padding:22px 26px;font-size:16px}
+.wcard h1{font-size:24px;margin:0 0 10px}.wbtns{display:flex;flex-direction:column;gap:8px;margin:16px 0 8px}.wbtns button{font-size:16px;padding:10px;margin:0}
+#verdict{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;font-size:14px}
+#verdict .rate{display:flex;justify-content:space-between;margin-top:6px;font-size:13px}#verdict .rate span{letter-spacing:1px}
+.winner{background:linear-gradient(90deg,#1a1407,#0b1220);border:1px solid var(--sun);border-radius:10px;padding:10px 12px;margin:8px 0;font-size:15px}
+.winner big{display:block;font-size:20px;font-weight:700;color:var(--sun)}
+body.planner .explore-only{display:none}
+[hidden]{display:none!important}
+@media (max-width:1000px){
+  header{height:auto;flex-wrap:wrap;padding:8px 10px;gap:8px}.brand b{font-size:15px}
+  #modes{margin-left:0}.hdr-actions button,#modes button{font-size:12px;padding:4px 7px}
+  main{display:flex;flex-direction:column}#center{order:1;min-height:58vh}#right{order:2}#left{order:3}
+  #siteList{display:flex;flex-wrap:wrap;gap:4px}#siteList li{border:1px solid var(--line)}
+  .stats{grid-template-columns:repeat(2,1fr)}#timeline input[type=datetime-local]{display:none}
+}

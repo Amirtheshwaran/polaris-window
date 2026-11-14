@@ -10,7 +10,7 @@ Polaris Window is a free, browser-based mission planner for the lunar south pole
 <YouTube link: 30-second video>
 
 ## Link to Final Project
-<https://USERNAME.github.io/polaris-window/>  (code: https://github.com/USERNAME/polaris-window)
+https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.com/Amirtheshwaran/polaris-window)
 
 ## Detailed Project Description
 **What it does**

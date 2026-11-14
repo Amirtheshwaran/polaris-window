@@ -55,13 +55,14 @@ function stat(v, l) { return `<div class="stat"><b>${v}</b><span>${l}</span></di
 function renderSiteTab() {
   const s = site(), st = siteState(s, ST.t);
   $('siteName').textContent = s.name;
-  $('siteMeta').innerHTML = `${s.note}<br>lat ${s.lat.toFixed(3)}°, lon ${s.lon.toFixed(2)}°E · elevation ${(s.elev / 1000).toFixed(2)} km · <a href="#" id="standBtn">🧍 Stand here in 3D</a> · <a href="#" id="overBtn">overview</a>`;
+  $('siteMeta').innerHTML = `${s.note}<br>lat ${s.lat.toFixed(3)}°, lon ${s.lon.toFixed(2)}°E · elevation ${(s.elev / 1000).toFixed(2)} km · <a href="#" id="standBtn">🧍 Stand here in 3D</a> · <a href="#" id="overBtn">overview</a> · <a target="_blank" rel="noopener" title="Open NASA/JPL Horizons and compare the Sun elevation with ours" href="${horizonsURL(s)}">✅ verify in JPL Horizons</a>`;
   $('standBtn').onclick = e => { e.preventDefault(); SC.setExag(1); $('exag').value = 1; $('exagV').textContent = 1; SC.flyTo(s, true); };
   $('overBtn').onclick = e => { e.preventDefault(); SC.overview(); };
   drawPano($('pano'), s, ST.t); drawStrip($('siteStrip'), s, ST.t);
   const m = stats(s, ST.t, Math.min(D.T, ST.t + 24 * 365));
-  $('siteStats').innerHTML = stat(pct(m.sun), 'sunlight, next 12 months') + stat(pct(m.earth), 'Earth visible (DTE comms)') + stat(hrs(m.maxDark), 'longest darkness') +
-    stat(hrs(m.maxBlk), 'longest comms blackout') + stat(pct(m.both), 'power AND comms') + stat(Math.round(m.powerW) + ' W', 'avg power, 10 m² array') +
+  $('verdict').innerHTML = verdict(s, m, st);
+  $('siteStats').innerHTML = stat('☀️ ' + pct(m.sun), 'of the time in sunlight (next 12 months)') + stat('🌍 ' + pct(m.earth), 'of the time Earth is in view (radio home)') + stat('🌑 ' + hrs(m.maxDark), 'longest night (no solar power)') +
+    stat('📵 ' + hrs(m.maxBlk), 'longest time without Earth (comms blackout)') + stat(pct(m.both), 'sun AND Earth together') + stat('⚡ ' + Math.round(m.powerW) + ' W', 'average power from a 10 m² solar panel') +
     (s.validation ? stat(pct(s.validation.ours) + ' / ' + pct(s.validation.nasa), 'ours vs NASA map, 2009–13') : '') +
     stat(st.sel.toFixed(2) + '° / ' + st.shz.toFixed(2) + '°', 'Sun elev. / terrain horizon now') + stat(st.eel.toFixed(2) + '°', 'Earth elevation now');
 }
@@ -72,7 +73,10 @@ function runWindows() {
   const list = $('wSites').value === 'all' ? allSites() : [site()];
   const res = list.map(s => ({ s, r: findWindows(s, c) })).sort((a, b) => (b.r.picked[0]?.score || 0) - (a.r.picked[0]?.score || 0));
   const best = res.find(x => x.r.picked.length);
-  let h = best ? `<p>Best overall: <b>${best.s.name}</b>, landing <b>${fmtDay(tDate(best.r.picked[0].a))}</b> (score ${best.r.picked[0].score.toFixed(0)}). Click any row to jump there.</p>` : '<p class="bad">No window meets every constraint. Try relaxing thresholds.</p>';
+  let h = best ? (() => { const w = best.r.picked[0], d = tDate(w.a);
+    return `<div class="winner">🏆 Best choice<big>${best.s.name}, land on ${d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}</big>
+    During the ${c.days}-day mission the Sun shines ${pct(w.sun)} of the time and Earth is in view ${pct(w.earth)} of the time. The longest night is only ${hrs(w.maxDark)}.
+    <br><a href="#" id="goBest">🧍 Stand there on that date →</a></div><p class="hint">Click any row below to jump to that date.</p>`; })() : '<p class="bad">No landing time meets every rule. Try a shorter mission or a different preset.</p>';
   res.forEach(({ s, r }, i) => {
     h += `<div class="winSite"><span>${i + 1}. ${s.name}</span><span class="badge">${r.feasible} of ${r.total} start times feasible</span></div><canvas class="calStrip" data-i="${i}"></canvas>`;
     if (r.picked.length) h += `<table><tr><th>Landing (UTC)</th><th>Sun</th><th>Earth</th><th>Max dark</th><th>Max blackout</th><th>Score</th></tr>` +
@@ -87,6 +91,7 @@ function runWindows() {
     g.fillStyle = '#fff'; r.picked.forEach(w => g.fillRect((w.a - r.a0) / r.step / r.curve.length * W - dpr, 0, 2 * dpr, H));
   });
   $$('#wOut tr.click').forEach(tr => tr.onclick = () => { ST.t = +tr.dataset.t; switchTab('site'); selectSite(tr.dataset.site); });
+  if (best) $('goBest').onclick = e => { e.preventDefault(); ST.t = best.r.picked[0].a; switchTab('site'); selectSite(best.s.id); };
 }
 
 // ------------------------------------------------------------- compare
@@ -170,6 +175,22 @@ function renderAbout() {
   <h3>Data</h3><p class="meta">NASA LRO LOLA (PDS Geosciences Node) · NASA/JPL NAIF SPICE · NASA PGDA Lunar Polar Illumination (Mazarico et al. 2011) · JPL Horizons. Built with Three.js, Chart.js, Python, NumPy, Numba, SpiceyPy.</p>`;
 }
 
+const stars = (v, icon) => icon.repeat(Math.round(v * 5)) + '<span style="opacity:.25">' + icon.repeat(5 - Math.round(v * 5)) + '</span>';
+function verdict(s, m, st) {
+  const pw = m.sun > .75 ? 'excellent for solar power' : m.sun > .55 ? 'good for solar power' : m.sun > .2 ? 'often dark, so it needs big batteries' : 'almost always dark, a cold trap where ice can hide';
+  const cm = m.earth > .75 ? 'Earth is almost always in view' : m.earth > .45 ? 'Earth is in view about half the time' : m.earth > 0.05 ? 'Earth is often hidden behind mountains' : 'Earth is never in view, so it needs a relay satellite';
+  return `<b>${s.name}</b> is ${pw}, and ${cm}.<div class="rate"><span title="Sunlight">☀️ Power ${stars(m.sun, '★')}</span><span title="Earth visibility">📡 Talk to Earth ${stars(m.earth, '★')}</span></div>
+  <div class="meta" style="margin:6px 0 0">Right now: the Sun is ${st.sun > .5 ? '<b style="color:#fbbf24">shining here</b>' : 'hidden'} and Earth is ${st.earth ? '<b style="color:#60a5fa">in view</b>' : 'hidden'}.</div>`;
+}
+function horizonsURL(s) {
+  const d = tDate(ST.t).toISOString().slice(0, 16).replace('T', ' '), e = tDate(ST.t + 1).toISOString().slice(0, 16).replace('T', ' ');
+  const q = { format: 'text', COMMAND: "'10'", CENTER: "'coord@301'", COORD_TYPE: "'GEODETIC'", SITE_COORD: `'${s.lon.toFixed(4)},${s.lat.toFixed(4)},${(s.elev / 1000).toFixed(3)}'`,
+    MAKE_EPHEM: "'YES'", EPHEM_TYPE: "'OBSERVER'", START_TIME: `'${d}'`, STOP_TIME: `'${e}'`, STEP_SIZE: "'1 h'", QUANTITIES: "'4'", ANG_FORMAT: "'DEG'" };
+  return 'https://ssd.jpl.nasa.gov/api/horizons.api?' + Object.entries(q).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&');
+}
+const PRESETS = { bal: [60, 50, 72, 96], power: [80, 0, 48, 2000], comms: [40, 80, 240, 48] };
+function preset(p) { $$('#wPreset button').forEach(b => b.classList.toggle('on', b.dataset.p === p)); ['wSun', 'wEarth', 'wDark', 'wBlack'].forEach((id, i) => $(id).value = PRESETS[p][i]); }
+
 // ------------------------------------------------------------- tabs, modes, tour
 function switchTab(t) { ST.tab = t; $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t)); $$('.tab').forEach(d => d.classList.toggle('on', d.id === 'tab-' + t)); renderTab(); writeHash(); }
 function renderTab() { ({ site: renderSiteTab, compare: renderCompare, valid: renderValid, about: renderAbout })[ST.tab]?.(); }
@@ -201,7 +222,10 @@ function pick(x, y, name) {
 
 // ------------------------------------------------------------- boot
 (async function () {
-  await loadAll();
+  const gl = document.createElement('canvas').getContext('webgl2') || document.createElement('canvas').getContext('webgl');
+  if (!gl) { $('loadMsg').innerHTML = 'Polaris Window needs WebGL (3D graphics). Please open it in an up-to-date Chrome, Edge, Firefox or Safari, with hardware acceleration turned on.'; document.querySelector('.spin').style.display = 'none'; return; }
+  const hadHash = location.hash.length > 1;
+  try { await loadAll(); } catch (e) { $('loadMsg').textContent = 'Could not load data: ' + e.message + '. Please refresh.'; return; }
   ST.t = tIndex(Date.now());
   readHash();
   $('time').max = D.T - 1; $('time').value = ST.t;
@@ -225,5 +249,9 @@ function pick(x, y, name) {
   $('tourBtn').onclick = () => tour(0); $('tourNext').onclick = () => tourI === TOUR.length - 1 ? ($('tourBox').hidden = true) : tour(tourI + 1);
   $('tourPrev').onclick = () => tour(tourI - 1); $('tourEnd').onclick = () => { $('tourBox').hidden = true; play(false); };
   addEventListener('resize', () => ST.tab === 'site' && renderSiteTab());
+  $$('#wPreset button').forEach(b => b.onclick = () => { preset(b.dataset.p); if ($('wOut').innerHTML) runWindows(); });
+  if (!hadHash) $('welcome').hidden = false;
+  $$('#welcome button').forEach(b => b.onclick = () => { $('welcome').hidden = true; const w = b.dataset.w;
+    if (w === 'tour') tour(0); else if (w === 'date') { switchTab('windows'); runWindows(); } else { switchTab('site'); selectSite('ridge'); } });
   window.PW = { ST, D, tour, runWindows, runHeat, selectSite, switchTab }; // console / demo-recording hooks
 })();

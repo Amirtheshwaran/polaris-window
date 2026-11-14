@@ -1,0 +1,135 @@
+{
+ "R": 1737400.0,
+ "obs_h": 2.0,
+ "naz": 120,
+ "hz_q": {
+  "offset": -4.0,
+  "step": 0.1
+ },
+ "grids": {
+  "regional": {
+   "half": 192000.0,
+   "n": 256
+  },
+  "core": {
+   "half": 40000.0,
+   "n": 256
+  }
+ },
+ "terrain": {
+  "half": 192000.0,
+  "n": 641
+ },
+ "terrain_core": {
+  "half": 40000.0,
+  "n": 513
+ },
+ "ephem": {
+  "start": "2026-01-01T00:00:00Z",
+  "step_h": 1,
+  "count": 43824,
+  "frame": "MOON_ME",
+  "earth_unit_km": 1000
+ },
+ "validation": {
+  "period": "2009-07-13 to 2013-07-18",
+  "source": "NASA PGDA / LOLA AVGVISIB_75S_120M_201608 (Mazarico et al. 2011)",
+  "grids": {
+   "regional": {
+    "cell_m": 1500.0,
+    "r": 0.9706801421014235,
+    "mae": 0.021082203701213543,
+    "bias": 0.0072591337301103525,
+    "within10": 0.971435546875
+   },
+   "core": {
+    "cell_m": 312.5,
+    "r": 0.9898419601059142,
+    "mae": 0.014712262373528366,
+    "bias": 0.01225868759694396,
+    "within10": 0.989105224609375
+   }
+  },
+  "horizons": {
+   "site": "Connecting Ridge",
+   "rows": [
+    {
+     "body": "Sun",
+     "utc": "2027-01-15 00:00",
+     "horizons": 0.4099,
+     "ours": 0.4106,
+     "diff": 0.0007
+    },
+    {
+     "body": "Sun",
+     "utc": "2027-04-01 12:00",
+     "horizons": -0.7575,
+     "ours": -0.7569,
+     "diff": 0.0007
+    },
+    {
+     "body": "Sun",
+     "utc": "2027-08-20 06:00",
+     "horizons": 0.3419,
+     "ours": 0.3426,
+     "diff": 0.0007
+    },
+    {
+     "body": "Sun",
+     "utc": "2028-02-10 18:00",
+     "horizons": -0.8922,
+     "ours": -0.8915,
+     "diff": 0.0007
+    },
+    {
+     "body": "Sun",
+     "utc": "2028-06-30 00:00",
+     "horizons": -0.7817,
+     "ours": -0.7811,
+     "diff": 0.0007
+    },
+    {
+     "body": "Earth",
+     "utc": "2027-01-15 00:00",
+     "horizons": 4.8243,
+     "ours": 4.8243,
+     "diff": -0.0
+    },
+    {
+     "body": "Earth",
+     "utc": "2027-04-01 12:00",
+     "horizons": -1.8934,
+     "ours": -1.8933,
+     "diff": 0.0
+    },
+    {
+     "body": "Earth",
+     "utc": "2027-08-20 06:00",
+     "horizons": 4.4805,
+     "ours": 4.4805,
+     "diff": 0.0
+    },
+    {
+     "body": "Earth",
+     "utc": "2028-02-10 18:00",
+     "horizons": -3.1052,
+     "ours": -3.1052,
+     "diff": 0.0
+    },
+    {
+     "body": "Earth",
+     "utc": "2028-06-30 00:00",
+     "horizons": -7.3864,
+     "ours": -7.3864,
+     "diff": -0.0
+    }
+   ],
+   "max_abs_diff_deg": 0.0007
+  }
+ },
+ "sources": [
+  "LOLA LDEM_80S_80M (NASA PDS Geosciences Node)",
+  "NAIF SPICE DE440s + MOON_PA_DE440 + MOON_ME frame",
+  "NASA PGDA Lunar Polar Illumination maps (validation)"
+ ]
+}

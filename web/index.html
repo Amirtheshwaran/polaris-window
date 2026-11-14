@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Polaris Window: Lunar South Pole Landing Planner</title>
+<meta name="description" content="Pick when and where to land at the lunar south pole. Real NASA LOLA terrain, SPICE ephemeris, validated against NASA illumination maps.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23111827'/><path d='M4 20 Q16 10 28 20' stroke='%23fbbf24' stroke-width='3' fill='none'/><circle cx='22' cy='9' r='3' fill='%2360a5fa'/></svg>">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<header>
+  <div class="brand"><svg viewBox="0 0 32 32" width="26" height="26"><circle cx="16" cy="16" r="14" fill="#0b1220" stroke="#334155"/><path d="M4 20 Q16 10 28 20" stroke="#fbbf24" stroke-width="3" fill="none"/><circle cx="22" cy="9" r="3" fill="#60a5fa"/></svg>
+    <div><b>Polaris Window</b><span>Know exactly when and where to land at the lunar south pole</span></div></div>
+  <nav id="modes">
+    <button data-mode="explore" class="on">Explore</button>
+    <button data-mode="planner">Planner</button>
+  </nav>
+  <div class="hdr-actions">
+    <button id="tourBtn" title="Guided tour">▶ Guided tour</button>
+    <button id="shareBtn" title="Copy a link to this exact view">🔗 Share view</button>
+  </div>
+</header>
+
+<main>
+  <aside id="left">
+    <h3>Landing sites</h3>
+    <ul id="siteList"></ul>
+    <p class="hint">Click anywhere on the terrain to drop your own site.</p>
+    <h3>Map layer</h3>
+    <div class="seg" id="layerSeg">
+      <button data-layer="light" class="on">Live sunlight</button>
+      <button data-layer="heat">Heatmap</button>
+    </div>
+    <label class="row">Height ×<input type="range" id="exag" min="1" max="6" step="0.5" value="3"><span id="exagV">3</span></label>
+    <div id="legend"></div>
+  </aside>
+
+  <section id="center">
+    <div id="view3d"></div>
+    <div id="hud">
+      <div id="hudSite"></div>
+      <div id="hudSun"></div>
+    </div>
+    <div id="tourBox" hidden><p id="tourText"></p><div><button id="tourPrev">‹</button><span id="tourStep"></span><button id="tourNext">Next ›</button><button id="tourEnd">✕</button></div></div>
+    <div id="timeline">
+      <button id="play" title="Play / pause">▶</button>
+      <select id="speed" title="Simulation speed"><option value="1">1 h/frame</option><option value="4" selected>4 h/frame</option><option value="12">12 h/frame</option></select>
+      <input type="range" id="time" min="0" max="1" value="0">
+      <input type="datetime-local" id="timeInput" step="3600">
+    </div>
+  </section>
+
+  <aside id="right">
+    <nav id="tabs">
+      <button data-tab="site" class="on">Stand at site</button>
+      <button data-tab="windows">Window finder</button>
+      <button data-tab="compare">Compare</button>
+      <button data-tab="heat">Heatmap</button>
+      <button data-tab="valid">Validation</button>
+      <button data-tab="about">About</button>
+    </nav>
+
+    <div class="tab on" id="tab-site">
+      <h2 id="siteName">-</h2>
+      <p id="siteMeta" class="meta"></p>
+      <canvas id="pano" height="300"></canvas>
+      <div class="panoLegend"><span class="k sun"></span>Sun path (next 29.5 days) <span class="k earth"></span>Earth path <span class="k dark"></span>Below terrain</div>
+      <div id="siteStats" class="stats"></div>
+      <canvas id="siteStrip" height="70"></canvas>
+      <p class="hint">Strip: next 60 days. Gold = sunlit, blue = Earth in view, black = blackout.</p>
+    </div>
+
+    <div class="tab" id="tab-windows">
+      <h2>Auto window finder</h2>
+      <p class="meta">Ranks every possible landing date (2026–2030) for each site against your mission constraints.</p>
+      <div class="form">
+        <label>Mission length <input type="number" id="wLen" value="14" min="1" max="90"> days</label>
+        <label>Min sunlight <input type="number" id="wSun" value="60" min="0" max="100"> %</label>
+        <label>Min Earth visibility <input type="number" id="wEarth" value="50" min="0" max="100"> %</label>
+        <label>Max continuous darkness <input type="number" id="wDark" value="72" min="0" max="2000"> h</label>
+        <label>Max comms blackout <input type="number" id="wBlack" value="96" min="0" max="2000"> h</label>
+        <label>Search from <input type="date" id="wFrom" value="2027-01-01"> to <input type="date" id="wTo" value="2028-12-31"></label>
+        <label>Sites <select id="wSites"><option value="all">All sites</option><option value="sel">Selected site only</option></select></label>
+      </div>
+      <button class="primary" id="wRun">Find best landing windows</button>
+      <div id="wOut"></div>
+    </div>
+
+    <div class="tab" id="tab-compare">
+      <h2>Side-by-side compare</h2>
+      <p class="meta">Pick 2–4 sites. Statistics over the chosen period.</p>
+      <div id="cmpPick" class="chips"></div>
+      <label class="row">Period <input type="date" id="cFrom" value="2027-01-01"> to <input type="date" id="cTo" value="2027-12-31"></label>
+      <div id="cmpTable"></div>
+      <canvas id="cmpChart" height="220"></canvas>
+      <canvas id="cmpChart2" height="180"></canvas>
+    </div>
+
+    <div class="tab" id="tab-heat">
+      <h2>Heatmap mode</h2>
+      <p class="meta">Colors the whole region by illumination or Earth visibility for any date range, computed live from terrain horizons.</p>
+      <label class="row">Metric <select id="hMetric"><option value="sun">Sunlight %</option><option value="earth">Earth visibility (DTE comms) %</option><option value="both">Sun AND Earth %</option></select></label>
+      <label class="row">From <input type="date" id="hFrom" value="2027-01-01"> to <input type="date" id="hTo" value="2027-12-31"></label>
+      <button class="primary" id="hRun">Compute heatmap</button>
+      <div id="hOut" class="meta"></div>
+    </div>
+
+    <div class="tab" id="tab-valid">
+      <h2>Checked against NASA</h2>
+      <div id="validOut"></div>
+    </div>
+
+    <div class="tab" id="tab-about">
+      <h2>About Polaris Window</h2>
+      <div id="aboutOut"></div>
+    </div>
+  </aside>
+</main>
+<div id="labels"></div>
+<div id="toast" hidden></div>
+<div id="loading"><div class="spin"></div><p>Loading LOLA terrain and SPICE ephemeris…</p></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

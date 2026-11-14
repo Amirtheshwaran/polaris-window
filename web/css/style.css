@@ -78,3 +78,4 @@ body.planner .explore-only{display:none}
   #siteList{display:flex;flex-wrap:wrap;gap:4px}#siteList li{border:1px solid var(--line)}
   .stats{grid-template-columns:repeat(2,1fr)}#timeline input[type=datetime-local]{display:none}
 }
+.btnlink{color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 8px;text-decoration:none;white-space:nowrap}

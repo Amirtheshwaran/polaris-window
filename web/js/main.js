@@ -43,7 +43,7 @@ function update() {
     rafPending = false;
     const s = site(), st = siteState(s, ST.t), d = tDate(ST.t);
     $('time').value = ST.t; $('timeInput').value = d.toISOString().slice(0, 16);
-    if (ST.layer === 'light') SC.setTime(ST.t);
+    SC.setTime(ST.t);
     $('hudSite').textContent = s.name;
     $('hudSun').innerHTML = `${fmtDate(d)} · Sun ${st.sel.toFixed(2)}° ${st.sun > .5 ? '<b style="color:#fbbf24">sunlit</b>' : 'shadow'} · Earth ${st.eel.toFixed(1)}° ${st.earth ? '<b style="color:#60a5fa">in view</b>' : 'blocked'}`;
     if (ST.tab === 'site') renderSiteTab();

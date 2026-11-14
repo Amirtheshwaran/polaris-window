@@ -22,6 +22,8 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 - **Custom sites:** click anywhere on the terrain to add a site with full analysis.
 - **Shareable links:** every site, date, tab and heatmap is encoded in the URL, so a teacher can send a class to the exact moment the Sun clears a crater rim.
 - **Explore mode with a guided tour** for the public and classrooms, and **Planner mode** for engineers.
+- **Classroom missions (learn.html):** six 5-minute, printable missions for ages 10+. Each opens the app at the exact place and date, with a question and an answer (for example, find the crater that never sees the Sun, or be the mission planner).
+- **Landing safety:** a slope layer from LOLA and a "best landing spots" map (sun + Earth + ground flatter than 8°).
 
 **How it works**
 1. A Python pipeline reads the LOLA LDEM_80S_80M DEM (80 m/pixel) and ray-marches every terrain point's horizon in 120 to 720 directions out to 220 km, including lunar curvature (131,000 grid points plus 8 named sites). It's accelerated with Numba.

@@ -131,5 +131,9 @@
   "LOLA LDEM_80S_80M (NASA PDS Geosciences Node)",
   "NAIF SPICE DE440s + MOON_PA_DE440 + MOON_ME frame",
   "NASA PGDA Lunar Polar Illumination maps (validation)"
- ]
+ ],
+ "slope_q": {
+  "step": 0.25,
+  "baseline_m": 80
+ }
 }

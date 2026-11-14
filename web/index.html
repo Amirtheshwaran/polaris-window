@@ -107,7 +107,7 @@
     <div class="tab" id="tab-heat">
       <h2>Heatmap mode</h2>
       <p class="meta">Colors the whole region by illumination or Earth visibility for any date range, computed live from terrain horizons.</p>
-      <label class="row">Metric <select id="hMetric"><option value="sun">Sunlight %</option><option value="earth">Earth visibility (DTE comms) %</option><option value="both">Sun AND Earth %</option></select></label>
+      <label class="row">Metric <select id="hMetric"><option value="sun">Sunlight %</option><option value="earth">Earth visibility (DTE comms) %</option><option value="both">Sun AND Earth %</option><option value="slope">⛰️ Flat ground (landing safety)</option><option value="land">🏆 Best landing spots (sun + Earth + flat)</option></select></label>
       <label class="row">From <input type="date" id="hFrom" value="2027-01-01"> to <input type="date" id="hTo" value="2027-12-31"></label>
       <button class="primary" id="hRun">Compute heatmap</button>
       <div id="hOut" class="meta"></div>

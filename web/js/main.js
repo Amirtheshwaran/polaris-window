@@ -1,4 +1,4 @@
-import { D, loadAll, allSites, addCustom, removeCustom, siteState, stats, findWindows, gridAverage, tIndex, tDate, fmtDate, fmtDay, pct, hrs, HOUR } from './data.js';
+import { SAFE_SLOPE, D, loadAll, allSites, addCustom, removeCustom, siteState, stats, findWindows, gridAverage, tIndex, tDate, fmtDate, fmtDay, pct, hrs, HOUR } from './data.js';
 import * as SC from './scene.js';
 import { drawPano, drawStrip } from './pano.js';
 
@@ -133,14 +133,16 @@ async function runHeat(req) {
   const out = {};
   for (const name of ['core', 'regional']) {
     out[name] = await gridAverage(D.grids[name], a, b, metric, p => $('hOut').textContent = `Computing ${name} grid… ${(p * 100).toFixed(0)}%`);
-    SC.setHeat(name, out[name], 1);
   }
+  let vmax = 1; if (metric === 'both' || metric === 'land') { vmax = .05; for (const v of out.core) vmax = Math.max(vmax, v); for (const v of out.regional) vmax = Math.max(vmax, v); }
+  ST.heatMax = vmax; for (const name in out) SC.setHeat(name, out[name], vmax);
   $('hRun').disabled = false;
   ST.heat = { metric, from, to }; setLayer('heat');
   const c = out.core; let best = 0, bi = 0; for (let i = 0; i < c.length; i++) if (c[i] > best) { best = c[i]; bi = i; }
-  const label = { sun: 'Sunlight', earth: 'Earth visibility', both: 'Sun AND Earth' }[metric];
+  const label = HEATL[metric];
   let psr = 0; if (metric === 'sun') for (const v of c) psr += v === 0;
-  $('hOut').innerHTML = `${label}, ${from} → ${to}. Best cell in the central 80 km: <b>${pct(best)}</b>.` + (metric === 'sun' ? ` ${(psr / c.length * 100).toFixed(1)}% of the central area got no sunlight at all in this period.` : '') +
+  if (metric === 'slope') { let safe = 0; for (const v of D.grids.core.slope) safe += v <= SAFE_SLOPE; $('hOut').innerHTML = `Bright = flat and safe, dark = steep (over 20°). ${(safe / c.length * 100).toFixed(0)}% of the central 80 km is flatter than ${SAFE_SLOPE}°, a typical lander limit. Slopes from LOLA at an 80 m baseline.`; writeHash(); return; }
+  $('hOut').innerHTML = `${label}, ${from} → ${to}. Best cell in the central 80 km: <b>${pct(best)}</b>.` + (metric === 'land' ? ` Only ground flatter than ${SAFE_SLOPE}° counts.` : '') + (metric === 'sun' ? ` ${(psr / c.length * 100).toFixed(1)}% of the central area got no sunlight at all in this period.` : '') +
     ` <a href="#" id="heatBest">Drop a site at the best cell</a>`;
   $('heatBest').onclick = e => { e.preventDefault(); const n = D.grids.core.n, h = D.grids.core.half, i = Math.floor(bi / n), j = bi % n; pick((j + .5) / n * 2 * h - h, h - (i + .5) / n * 2 * h, 'Best ' + label); };
   writeHash();
@@ -148,7 +150,7 @@ async function runHeat(req) {
 function setLayer(l) {
   ST.layer = l; SC.setMode(l); $$('#layerSeg button').forEach(b => b.classList.toggle('on', b.dataset.layer === l));
   const g = 'linear-gradient(90deg,#000004,#280b54,#65156e,#9f2a63,#d44842,#f57d15,#fac127,#fcffa4)';
-  $('legend').innerHTML = l === 'heat' && ST.heat ? `<div>${{ sun: 'Sunlight', earth: 'Earth visibility', both: 'Sun AND Earth' }[ST.heat.metric]} %</div><div class="bar" style="background:${g}"></div><div class="ends"><span>0%</span><span>50%</span><span>100%</span></div>` :
+  $('legend').innerHTML = l === 'heat' && ST.heat ? (ST.heat.metric === 'slope' ? `<div>Ground slope</div><div class="bar" style="background:${g}"></div><div class="ends"><span>20°+ steep</span><span>10°</span><span>0° flat</span></div>` : `<div>${HEATL[ST.heat.metric]} %</div><div class="bar" style="background:${g}"></div><div class="ends"><span>0%</span><span>${pct((ST.heatMax || 1) / 2).replace('.0%', '%')}</span><span>${pct(ST.heatMax || 1).replace('.0%', '%')}</span></div>`) :
     l === 'heat' ? '<div>Run a heatmap from the Heatmap tab.</div>' : '<div>Terrain lit by the real Sun position (shadows from LOLA horizons). Gold/blue glows: Sun and Earth.</div>';
   update();
 }
@@ -175,11 +177,13 @@ function renderAbout() {
   <h3>Data</h3><p class="meta">NASA LRO LOLA (PDS Geosciences Node) · NASA/JPL NAIF SPICE · NASA PGDA Lunar Polar Illumination (Mazarico et al. 2011) · JPL Horizons. Built with Three.js, Chart.js, Python, NumPy, Numba, SpiceyPy.</p>`;
 }
 
+const HEATL = { sun: 'Sunlight', earth: 'Earth visibility', both: 'Sun AND Earth', slope: 'Flat ground', land: 'Best landing spots' };
 const stars = (v, icon) => icon.repeat(Math.round(v * 5)) + '<span style="opacity:.25">' + icon.repeat(5 - Math.round(v * 5)) + '</span>';
 function verdict(s, m, st) {
   const pw = m.sun > .75 ? 'excellent for solar power' : m.sun > .55 ? 'good for solar power' : m.sun > .2 ? 'often dark, so it needs big batteries' : 'almost always dark, a cold trap where ice can hide';
   const cm = m.earth > .75 ? 'Earth is almost always in view' : m.earth > .45 ? 'Earth is in view about half the time' : m.earth > 0.05 ? 'Earth is often hidden behind mountains' : 'Earth is never in view, so it needs a relay satellite';
-  return `<b>${s.name}</b> is ${pw}, and ${cm}.<div class="rate"><span title="Sunlight">☀️ Power ${stars(m.sun, '★')}</span><span title="Earth visibility">📡 Talk to Earth ${stars(m.earth, '★')}</span></div>
+  const sl = s.slope == null ? '' : s.slope <= SAFE_SLOPE ? ` The ground is flat enough to land (${s.slope}° slope).` : ` The ground is steep (${s.slope}°), which is risky for a lander.`;
+  return `<b>${s.name}</b> is ${pw}, and ${cm}.${sl}<div class="rate"><span title="Sunlight">☀️ Power ${stars(m.sun, '★')}</span><span title="Earth visibility">📡 Talk to Earth ${stars(m.earth, '★')}</span></div>
   <div class="meta" style="margin:6px 0 0">Right now: the Sun is ${st.sun > .5 ? '<b style="color:#fbbf24">shining here</b>' : 'hidden'} and Earth is ${st.earth ? '<b style="color:#60a5fa">in view</b>' : 'hidden'}.</div>`;
 }
 function horizonsURL(s) {

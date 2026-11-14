@@ -6,13 +6,14 @@ export const HOUR = 3600e3;
 async function bin(url, Type) { const b = await (await fetch(url)).arrayBuffer(); return new Type(b); }
 
 export async function loadAll() {
-  const [meta, sites, eph, hr, hc, ter, terc] = await Promise.all([
+  const [meta, sites, eph, hr, hc, ter, terc, slr, slc] = await Promise.all([
     fetch('data/meta.json').then(r => r.json()), fetch('data/sites.json').then(r => r.json()),
     bin('data/ephem.bin', Float32Array), bin('data/hz_regional.bin', Uint8Array), bin('data/hz_core.bin', Uint8Array),
-    bin('data/terrain.bin', Int16Array), bin('data/terrain_core.bin', Int16Array)]);
+    bin('data/terrain.bin', Int16Array), bin('data/terrain_core.bin', Int16Array), bin('data/slope_regional.bin', Uint8Array), bin('data/slope_core.bin', Uint8Array)]);
   Object.assign(D, { meta, sites, ephem: eph, T: meta.ephem.count, t0: Date.parse(meta.ephem.start), terrain: ter, terrainCore: terc });
   D.grids.core = mkGrid(meta.grids.core, hc, meta);
   D.grids.regional = mkGrid(meta.grids.regional, hr, meta);
+  D.grids.core.slope = Float32Array.from(slc, v => v * .25); D.grids.regional.slope = Float32Array.from(slr, v => v * .25);
   for (const s of D.sites) prepSite(s, s.horizon);
   try { for (const c of JSON.parse(localStorage.getItem('pw_custom') || '[]')) addCustom(c.x, c.y, c.name, false); } catch (e) {}
 }
@@ -130,8 +131,8 @@ export function findWindows(s, c) {
 export function addCustom(x, y, name, persist = true) {
   const [lat, lon] = xy2ll(x, y), g = gridFor(x, y);
   if (!g) return null;
-  const prof = horizonFromGrid(g, x, y), elev = heightAt(x, y);
-  const s = { id: 'c' + Math.round(x) + '_' + Math.round(y), name: name || `Custom ${D.custom.length + 1}`, note: 'Your site (horizon from precomputed grid)', lat, lon, x, y, elev, custom: true };
+  const prof = horizonFromGrid(g, x, y), elev = heightAt(x, y), slope = cellOf(g, x, y, g.slope);
+  const s = { id: 'c' + Math.round(x) + '_' + Math.round(y), name: name || `Custom ${D.custom.length + 1}`, note: 'Your site (horizon from precomputed grid)', lat, lon, x, y, elev, slope, custom: true };
   prepSite(s, prof); D.custom.push(s);
   if (persist) saveCustom();
   return s;
@@ -144,6 +145,7 @@ export function gridFor(x, y) {
   for (const g of [D.grids.core, D.grids.regional]) if (Math.abs(x) < g.half * 0.985 && Math.abs(y) < g.half * 0.985) return g;
   return null;
 }
+function cellOf(g, x, y, arr) { const n = g.n, j = Math.min(n - 1, Math.max(0, Math.floor((x + g.half) / (2 * g.half) * n))), i = Math.min(n - 1, Math.max(0, Math.floor((g.half - y) / (2 * g.half) * n))); return +arr[i * n + j].toFixed(1); }
 function horizonFromGrid(g, x, y) { // bilinear blend of 4 neighbouring cell profiles
   const n = g.n, fj = (x + g.half) / (2 * g.half) * n - .5, fi = (g.half - y) / (2 * g.half) * n - .5;
   const j = Math.max(0, Math.min(n - 2, Math.floor(fj))), i = Math.max(0, Math.min(n - 2, Math.floor(fi))), wj = fj - j, wi = fi - i;
@@ -169,8 +171,11 @@ export function gridIllum(g, t, out) {
 }
 
 // Heatmap: average metric per cell over [a,b) with stride; async-chunked so the UI stays alive
+export const SAFE_SLOPE = 8; // degrees; typical lander tilt limit
 export async function gridAverage(g, a, b, metric, onProg) {
   const N = g.n * g.n, F = g.F, hz = g.hz, naz = g.naz, acc = new Float32Array(N);
+  if (metric === 'slope') { for (let k = 0; k < N; k++) acc[k] = Math.max(0, 1 - g.slope[k] / 20); return acc; }
+  if (metric === 'land') { const v = await gridAverage(g, a, b, 'both', onProg); for (let k = 0; k < N; k++) v[k] *= g.slope[k] <= SAFE_SLOPE ? 1 : 0; return v; }
   const stride = Math.max(1, Math.ceil((b - a) / 1500)); let cnt = 0;
   const steps = []; for (let t = a; t < b; t += stride) steps.push(t);
   for (let si = 0; si < steps.length; si++) {

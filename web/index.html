@@ -78,6 +78,25 @@
   <!-- 3D Interactive Markers Container -->
   <div id="labels"></div>
 
+  <!-- Subtle Ground Scale & Polar Orientation Indicators -->
+  <div id="hud-indicators" class="hud-indicators">
+    <div id="orientationCompass" class="orientation-compass" title="Orientation: Arrow points toward Earth (0° Lon). Center is South Pole. Click to align view with Earth.">
+      <svg viewBox="0 0 36 36" width="30" height="30" aria-hidden="true">
+        <circle cx="18" cy="18" r="15" fill="#101113" stroke="rgba(233, 231, 225, 0.25)" stroke-width="1.2"/>
+        <circle cx="18" cy="18" r="1.5" fill="#E9E7E1"/>
+        <g id="compassNeedle">
+          <line x1="18" y1="18" x2="18" y2="6" stroke="#E9E7E1" stroke-width="1.5"/>
+          <polygon points="18,4 15.5,8 20.5,8" fill="#E9E7E1"/>
+          <text x="18" y="14" text-anchor="middle" font-size="6" font-family="monospace" fill="#E9E7E1" font-weight="bold">E</text>
+        </g>
+      </svg>
+    </div>
+    <div id="scaleIndicator" class="scale-indicator" title="Approximate ground scale at target center">
+      <div id="scaleBarLine" class="scale-bar-line"></div>
+      <span id="scaleBarText" class="scale-bar-text">50 km</span>
+    </div>
+  </div>
+
   <!-- Discreet Floating Selected-Site Card (Explore Mode) -->
   <div id="site-summary-card" class="site-summary-card" aria-label="Selected Location Summary">
     <div class="summary-header">

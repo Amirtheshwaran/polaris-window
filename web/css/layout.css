@@ -29,40 +29,94 @@ main#app-shell {
   inset: 0;
   z-index: 5;
   pointer-events: none;
+  overflow: hidden;
 }
-.site-label {
+
+.lbl {
   position: absolute;
   transform: translate(-50%, -100%);
-  pointer-events: auto;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: opacity var(--transition-fast);
-}
-.site-label-pin {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--lunar-white);
-  border: 1px solid var(--obsidian);
-  box-shadow: 0 0 6px rgba(233, 231, 225, 0.6);
-}
-.site-label-text {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--lunar-white);
+  font-size: 11px;
+  font-weight: 500;
   background: var(--obsidian);
+  color: var(--text-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 1px 5px;
-  margin-bottom: 2px;
+  padding: 2px 7px;
   white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  user-select: none;
 }
-.site-label.active .site-label-pin {
-  background: #ffffff;
-  box-shadow: 0 0 10px #ffffff;
-  transform: scale(1.3);
+.lbl:hover {
+  background: var(--obsidian-surface-2);
+  border-color: var(--border-medium);
+  color: var(--lunar-white);
+}
+.lbl.on {
+  border-color: var(--lunar-white);
+  color: var(--lunar-white);
+  background: var(--obsidian-surface-3);
+  box-shadow: 0 0 10px rgba(233, 231, 225, 0.3);
+  font-weight: 600;
+  z-index: 10;
+}
+.lbl.geo {
+  background: var(--obsidian-surface-1);
+  border-color: var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 10px;
+  pointer-events: none;
+}
+
+/* Subtle Ground Scale & Polar Heading Indicators */
+.hud-indicators {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none;
+}
+.orientation-compass {
+  pointer-events: auto;
+  cursor: pointer;
+  background: var(--obsidian);
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition-fast);
+}
+.orientation-compass:hover {
+  transform: scale(1.08);
+}
+.scale-indicator {
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+.scale-bar-line {
+  height: 2px;
+  background: var(--lunar-white-75);
+  border-left: 1px solid var(--lunar-white);
+  border-right: 1px solid var(--lunar-white);
+  width: 60px;
+  min-width: 20px;
+  max-width: 120px;
+  transition: width 0.1s ease-out;
+}
+.scale-bar-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1;
 }
 
 /* Real NASA Terrain Loading Screen */

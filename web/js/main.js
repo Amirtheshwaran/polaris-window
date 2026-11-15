@@ -82,7 +82,7 @@ function runWindows() {
   const best = res.find(x => x.r.picked.length);
   let h = best ? (() => { const w = best.r.picked[0], d = tDate(w.a);
     return `<div class="winner">🏆 Best choice<big>${best.s.name}, land on ${d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}</big>
-    During the ${c.days}-day mission the Sun shines ${pct(w.sun)} of the time and Earth is in view ${pct(w.earth)} of the time. The longest night is only ${hrs(w.maxDark)}.${w.margin > 0 ? ` The Sun and Earth always stay at least ${w.margin.toFixed(1)}° above the hills, a good safety margin.` : ''}
+    During the ${c.days}-day mission the Sun shines ${pct(w.sun)} of the time and Earth is in view ${pct(w.earth)} of the time. The longest night is only ${hrs(w.maxDark)}.${w.margin > 0 ? ` The Sun${best.r.useE ? ' and Earth always stay' : ' always stays'} at least ${w.margin.toFixed(1)}° above the hills, a good safety margin.` : ''}
     <br><a href="#" id="goBest">🧍 Stand there on that date →</a></div><p class="hint">Click any row below to jump to that date.</p>`; })() : '<p class="bad">No landing time meets every rule. Try a shorter mission or a different preset.</p>';
   res.forEach(({ s, r }, i) => {
     h += `<div class="winSite"><span>${i + 1}. ${s.name}</span><span class="badge">${r.feasible} of ${r.total} start times feasible</span></div><canvas class="calStrip" data-i="${i}"></canvas>`;

@@ -138,7 +138,7 @@ export function stats(s, a, b) {
 // Auto window finder: rank start dates (6-hour steps) for an N-day mission.
 export function findWindows(s, c) {
   const L = Math.round(c.days * 24), a0 = tIndex(c.from), a1 = Math.min(tIndex(c.to), D.T - L), step = 6;
-  const { sun, earth, smar, emar } = series(s), cand = [];
+  const { sun, earth, smar, emar } = series(s), cand = [], useE = c.minEarth > 0 || c.maxBlack < L; // Earth clearance only counts if the rules care about Earth
   // prefix sums for fast means
   const ps = new Float64Array(D.T + 1), pe = new Float64Array(D.T + 1);
   for (let t = 0; t < D.T; t++) { ps[t + 1] = ps[t] + sun[t] / 250; pe[t + 1] = pe[t] + earth[t]; }
@@ -148,7 +148,7 @@ export function findWindows(s, c) {
     let ok = sp * 100 >= c.minSun && ep * 100 >= c.minEarth, md = 0, mb = 0, mg = 99;
     if (ok) { // only evaluate run lengths for feasible windows
       let d = 0, k = 0;
-      for (let t = a; t < a + L; t++) { d = sun[t] < 125 ? d + 1 : 0; if (d > md) md = d; k = earth[t] ? 0 : k + 1; if (k > mb) mb = k; const m = smar[t] < emar[t] ? smar[t] : emar[t]; if (m < mg) mg = m; }
+      for (let t = a; t < a + L; t++) { d = sun[t] < 125 ? d + 1 : 0; if (d > md) md = d; k = earth[t] ? 0 : k + 1; if (k > mb) mb = k; const m = useE && emar[t] < smar[t] ? emar[t] : smar[t]; if (m < mg) mg = m; }
       ok = md <= c.maxDark && mb <= c.maxBlack;
     }
     const score = ok ? 100 * (0.55 * sp + 0.3 * ep + 0.15 * (1 - md / L)) : 0;
@@ -158,7 +158,7 @@ export function findWindows(s, c) {
   cand.sort(rankWin);
   const picked = []; // non-overlapping top windows
   for (const w of cand) { if (picked.every(p => Math.abs(p.a - w.a) >= L)) picked.push(w); if (picked.length >= 5) break; }
-  return { picked, curve, a0, step, feasible: cand.length, total: curve.length };
+  return { picked, curve, a0, step, feasible: cand.length, total: curve.length, useE };
 }
 
 export const rankWin = (x, y) => (Math.round(y.score * 10) - Math.round(x.score * 10)) || (y.margin - x.margin) || (x.a - y.a);

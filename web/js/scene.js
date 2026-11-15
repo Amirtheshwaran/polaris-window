@@ -185,7 +185,7 @@ function updateLabels() {
     let vis = p.z < 1 && Math.abs(p.x) < 1.05 && Math.abs(p.y) < 1.05 && !(standingMode && l.classList.contains('geo'));
     if (vis) {
       const x = r.left + (p.x + 1) / 2 * r.width, y = r.top + (1 - p.y) / 2 * r.height;
-      if (l.offsetWidth) l._w = l.offsetWidth;
+      if (!l._w && l.offsetWidth) l._w = l.offsetWidth; // measure once (text never changes); avoids per-frame layout thrash
       const w = l._w || 90, box = [x - w / 2 - 2, y - 30, x + w / 2 + 2, y - 8];
       if (placed.some(q => box[0] < q[2] && box[2] > q[0] && box[1] < q[3] && box[3] > q[1])) vis = false;
       else { placed.push(box); l.style.left = x + 'px'; l.style.top = y + 'px'; }

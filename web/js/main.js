@@ -386,7 +386,7 @@ function demo() {
   if (!gl) { $('loadMsg').innerHTML = 'Polaris Window needs WebGL (3D graphics). Please open it in an up-to-date Chrome, Edge, Firefox or Safari, with hardware acceleration turned on.'; document.querySelector('.spin').style.display = 'none'; return; }
   const hadHash = location.hash.length > 1, isDemo = /demo=1/.test(location.hash);
   LOAD.onprog = () => { $('pfill').style.width = Math.min(100, LOAD.got / LOAD.total * 100) + '%'; $('loadMsg').textContent = `Loading real NASA Moon terrain… ${(LOAD.got / 1e6).toFixed(1)} MB`; };
-  try { await loadAll(); } catch (e) { $('loadMsg').textContent = 'Could not load data: ' + e.message + '. Please refresh.'; return; }
+  try { await loadAll(); } catch (e) { LOAD.onprog = null; $('loadMsg').textContent = 'Could not load data: ' + e.message + '. Please refresh.'; console.error(e); return; }
   ST.t = tIndex(Date.now());
   readHash();
   $('time').max = D.T - 1; $('time').value = ST.t;

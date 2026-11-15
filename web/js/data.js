@@ -19,12 +19,15 @@ async function horizonGrid(name, naz) {
   }
   return bin(`data/hz_${name}.bin`, Uint8Array);
 }
+// Streams a binary file with progress. Never trusts Content-Length: servers such as GitHub Pages gzip
+// responses on the fly, so the header is the compressed size while the stream yields decompressed bytes.
 async function bin(url, Type) {
   const r = await fetch(url); if (!r.ok) throw new Error(url + ' ' + r.status);
-  const len = +r.headers.get('Content-Length') || 0, rd = r.body && r.body.getReader();
-  if (!rd || !len) { const b = await r.arrayBuffer(); LOAD.got += b.byteLength; LOAD.onprog && LOAD.onprog(); return new Type(b); }
-  const buf = new Uint8Array(len); let off = 0;
-  for (;;) { const { done, value } = await rd.read(); if (done) break; buf.set(value, off); off += value.length; LOAD.got += value.length; LOAD.onprog && LOAD.onprog(); }
+  const rd = r.body && r.body.getReader && r.body.getReader();
+  if (!rd) { const b = await r.arrayBuffer(); LOAD.got += b.byteLength; LOAD.onprog && LOAD.onprog(); return new Type(b); }
+  const parts = []; let n = 0;
+  for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); n += value.length; LOAD.got += value.length; LOAD.onprog && LOAD.onprog(); }
+  const buf = new Uint8Array(n); let off = 0; for (const p of parts) { buf.set(p, off); off += p.length; }
   return new Type(buf.buffer);
 }
 

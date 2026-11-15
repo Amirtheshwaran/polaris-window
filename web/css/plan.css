@@ -200,3 +200,10 @@ canvas.calStrip {
   display: block;
   margin: 4px 0 8px;
 }
+
+/* Long option labels (e.g. heatmap metric) must not be clipped */
+.form-field-row select {
+  width: auto;
+  min-width: 100px;
+  max-width: 230px;
+}

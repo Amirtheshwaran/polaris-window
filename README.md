@@ -12,15 +12,18 @@ NASA Space Apps Challenge 2026: *Lunar Landing Site Navigator*
 
 | | |
 |---|---|
-| ![3D south pole with the nine Artemis III candidate regions](media/1-overview-regions.png) | ![Stand-at-site horizon panorama with Sun and Earth paths](media/2-stand-at-site.png) |
-| **3D south pole** from NASA LOLA terrain, with the nine Artemis III candidate regions (official USGS footprints) | **Stand at site:** the real horizon, with the Sun path (gold) and Earth path (blue) |
+| ![3D south pole with the Artemis III candidate regions](media/1-overview-regions.png) | ![Site details: horizon silhouette with Sun and Earth paths](media/2-stand-at-site.png) |
+| **3D south pole** from NASA LOLA terrain on the LROC globe, with the nine Artemis III candidate regions (official USGS footprints) | **Site details & horizons:** the real terrain skyline, with the Sun path (white) and Earth path (gray) |
 | ![Window finder ranking landing dates](media/3-best-landing-date.png) | ![Best landing spots heatmap](media/4-best-landing-spots-heatmap.png) |
-| **Best landing date:** ranks every landing slot from 2025 to 2030 | **Best landing spots:** sun + Earth + flat ground for any date range |
-| ![Will your lander survive? battery simulator](media/7-lander-survival.png) | ![Earth-visibility validation](media/6-earth-validation-vs-nasa.png) |
-| **Will your lander survive?** Battery simulated hour by hour from real sunlight | **Comms check:** our Earth-visibility map vs NASA's (r = 0.992) |
+| **Find a landing date:** ranks every landing slot from 2025 to 2030 and explains the top window | **Best landing spots:** Sun + Earth + flat ground for any date range |
+| ![Lander battery and power check](media/7-lander-survival.png) | ![Side-by-side site comparison](media/8-compare-sites.png) |
+| **Lander battery & power check:** battery simulated hour by hour from real sunlight | **Side-by-side comparison:** sunlight, Earth view, darkness and power for up to 4 sites |
 
 ![Our sunlight map vs NASA's published map](media/5-validation-vs-nasa.png)
 *Validation: our model (center) reproduces NASA's published south-pole illumination map (left) with r = 0.990.*
+
+![Our Earth-visibility map vs NASA's published map](media/6-earth-validation-vs-nasa.png)
+*Comms check: our Earth-visibility map reproduces NASA's published map with r = 0.992.*
 
 Polaris Window is a browser-based mission planner for the lunar south pole. It uses real NASA terrain and ephemeris to answer the planner's question directly: *which site, and which landing date, gives us the power and the direct-to-Earth comms we need?*
 
@@ -33,15 +36,15 @@ Polaris Window is a browser-based mission planner for the lunar south pole. It u
 | **Auto window finder** | Enter a mission length and minimum sunlight, Earth visibility, darkness and blackout limits. It scores every 6-hour landing slot from 2025 to 2030 at every site and ranks the best non-overlapping windows. |
 | **Side-by-side compare** | Compare 2 to 4 sites, or compare up to 4 landing dates at one site: sunlight %, Earth visibility %, sun AND Earth %, longest darkness, longest comms blackout and solar energy, plus charts for each lunation. |
 | **Heatmap mode** | Colors the whole region by sunlight, Earth visibility, or both, for any date range. It's computed live in the browser from 131k precomputed terrain horizons. |
-| **12-month landing forecast** | A calendar for any site: one square per day, green for sun and Earth all day, yellow for partly, blue for sun without Earth, dark red for night. Click a day to go there. |
-| **Will your lander survive?** | Pick a solar panel, battery and power use, and the battery is simulated hour by hour with the real sunlight at that site and date. It's a game for students and a sizing check for planners. |
-| **Sight-lines and ice map** | Lines from the selected site to the Sun and Earth (solid = clear, dashed = blocked by terrain), plus a one-click map of places that never saw the Sun from 2025 to 2030, where water ice can survive. |
+| **12-month landing calendar** | A calendar for any site: one square per day, shaded from bright (Sun and Earth all day) through partial and Sun-only to dark (night). Click a day to go there. |
+| **Lander battery & power check** | Pick a solar panel, battery and power use, and the battery is simulated hour by hour with the real sunlight at that site and date. It's a game for students and a sizing check for planners. |
+| **Sight-lines and cold-trap map** | Lines from the selected site to the Sun and Earth (solid = clear, dashed = blocked by terrain), plus a one-click map of places that received no sunlight from 2025 to 2030 (candidate cold traps; this does not by itself establish ice). |
 | **Real CLPS case study** | IM-2 *Athena* (March 2025): our model shows its site and date were excellent, and that it was lost to a crater too small for 80 m maps, which explains why finer hazard maps come next. |
 | **Drop your own site** | Click anywhere on the terrain. Custom sites get full statistics, a panorama and window ranking. |
 | **Checked against NASA** | Our sunlight map reproduces NASA PGDA's published south-pole illumination map with r = 0.990 (mean error 1.5 points), our Earth-visibility (comms) map reproduces NASA's Earth-visibility map with r = 0.992 (mean error 1.8 points), and our Sun and Earth elevations match JPL Horizons to 0.001°. |
 | **Mission brief** | One click produces a printable or PDF report for the chosen site and landing date: key numbers, safety margin, panorama, 60-day outlook and a day-by-day table. |
 | **Shareable links + QR** | Every view (site, date, tab, heatmap, custom site) is encoded in the URL. The share dialog also shows a QR code, so a teacher can put it on a projector and students open the exact moment on their phones. |
-| **Explore / Planner modes + guided tour** | An 8-step narrated tour for classrooms and the public, and full controls for planners. |
+| **Explore / Planner modes + guided tour** | A narrated guided tour for classrooms and the public, and full controls for planners. |
 
 ## Why this is easier than existing tools
 
@@ -59,16 +62,16 @@ The challenge notes that tools for Sun and Earth positions exist, but their inte
 ## How it works
 
 ```mermaid
-flowchart LR
-  A["NASA LRO LOLA<br/>80 m south-pole terrain"] --> B["Horizon ray-tracing<br/>131,000 points x 120 directions<br/>out to 220 km, with lunar curvature"]
-  C["NASA/JPL NAIF SPICE<br/>DE440 + lunar orientation"] --> D["Hourly Sun and Earth vectors<br/>2025-2030, MOON_ME frame"]
-  E["USGS Artemis III<br/>region footprints"] --> F["Best flat spot<br/>in each region"]
-  B --> G[("Static data<br/>about 10 MB")]
+flowchart TD
+  A["NASA LRO LOLA<br/>80 m polar terrain"] --> B["Horizon<br/>ray-tracing<br/>131k points<br/>120 directions<br/>220 km range"]
+  C["NASA/JPL<br/>NAIF SPICE<br/>DE440"] --> D["Hourly Sun<br/>and Earth<br/>2025–2030"]
+  E["USGS<br/>Artemis III<br/>regions"] --> F["Best flat spot<br/>per region"]
+  B --> G[("Static data<br/>~10 MB")]
   D --> G
   F --> G
-  G --> H["Browser app, no server<br/>Three.js + Chart.js"]
-  H --> I["3D sunlight · panorama · best dates<br/>compare · heatmaps · survival · mission brief"]
-  J["NASA PGDA sunlight and Earth maps<br/>JPL Horizons"] -. "validation, r = 0.99" .-> H
+  G --> H["Browser app<br/>no server<br/>Three.js"]
+  H --> I["3D terrain<br/>landing dates<br/>compare<br/>heatmaps<br/>power check"]
+  J["NASA PGDA maps<br/>JPL Horizons"] -. "validation<br/>r = 0.99" .-> H
 ```
 
 * **Horizons:** for each grid point (two 256 × 256 grids: 1.5 km over ±192 km, 312 m over the central ±40 km), we march rays in 120 directions across the DEM and keep the maximum elevation angle, including lunar curvature (`d²/2R`). Named sites use 720 directions on the full 80 m DEM.

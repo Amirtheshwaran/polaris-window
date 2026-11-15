@@ -69,7 +69,7 @@ export const RAMP = [
   [233, 231, 225]
 ];
 
-// Physically Grounded Lunar Shaders (Lommel-Seeliger scattering, Hapke opposition surge, LOLA normals & albedo)
+// Physically Grounded Lunar Shaders (Lommel-Seeliger scattering, Hapke opposition surge, LOLA-derived normals)
 const vs = `
 attribute vec2 mxy;
 varying vec2 vM;
@@ -122,10 +122,9 @@ void main() {
   float hh = isCore == 1 ? coreHalf : regHalf;
   vec2 uv = vec2((vM.x + hh) / (2.0 * hh), (hh - vM.y) / (2.0 * hh));
 
-  // Sample LOLA normal & albedo texture
+  // Sample LOLA-derived normal texture (alpha = constant albedo)
   vec4 normSample = isCore == 1 ? texture2D(normC, uv) : texture2D(normR, uv);
   vec2 grad = (normSample.rg - 0.5) * 2.0;
-  float crest = normSample.b;
   float lolaAlbedo = normSample.a;
 
   // Exact LOLA surface normal blended seamlessly with lunar sphere curvature
@@ -317,7 +316,7 @@ void main() {
 }
 `;
 
-// Build analytical LOLA normal, curvature, and albedo maps directly from authentic elevation grids
+// Build LOLA-derived normal maps from the elevation grids (alpha holds a constant albedo)
 function buildTerrainNormals(heights, half, n) {
   const dx = (2 * half) / (n - 1);
   const data = new Uint8Array(n * n * 4);
@@ -342,24 +341,17 @@ function buildTerrainNormals(heights, half, n) {
       const gy = ((z00 + 2 * z01 + z02) - (z20 + 2 * z21 + z22)) / (8 * dx);
 
       const slope = Math.atan(Math.hypot(gx, gy));
-      const curv = (z01 + z21 + z10 + z12 - 4 * z11) / (dx * dx);
 
-      // Authentic lunar regolith albedo factor (LOLA & LROC geomorphological reflectance)
-      let albedo = 0.52;
-      // Mass-wasting on steep slopes (10° to 32°) continuously exposes fresh, bright anorthosite
-      const tSlope = Math.max(0, Math.min(1, (slope - 0.174) / 0.384));
-      albedo += tSlope * 0.22;
-      // Ridge crests and crater rims seismic shaking exposure
-      const tCrest = Math.max(0, Math.min(1, -curv * 2000));
-      albedo += tCrest * 0.10;
-      // Mature space-weathered dark soil pooling on flat floors
-      if (slope < 0.08) albedo -= (1 - slope / 0.08) * 0.06;
+      // Uniform albedo: LOLA provides elevation, not reflectance, so no per-pixel brightness is
+      // invented here. Visible relief comes only from LOLA-derived normals and the real Sun direction;
+      // large-scale reflectance comes from the LROC global mosaic sampled in the shader.
+      const albedo = 0.52;
 
       const k = (i0 + j) * 4;
       // Pack into [0, 255]
       data[k] = Math.max(0, Math.min(255, Math.round((gx * 0.5 + 0.5) * 255)));
       data[k + 1] = Math.max(0, Math.min(255, Math.round((gy * 0.5 + 0.5) * 255)));
-      data[k + 2] = Math.max(0, Math.min(255, Math.round(tCrest * 255)));
+      data[k + 2] = 0; // unused channel
       data[k + 3] = Math.max(0, Math.min(255, Math.round(albedo * 255)));
     }
   }

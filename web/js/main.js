@@ -49,7 +49,8 @@ function update() {
     SC.setTime(ST.t); SC.setRays(s, st);
     $('hudSite').textContent = s.name;
     $('hudSun').innerHTML = `${fmtDate(d)} · Sun ${st.sel.toFixed(2)}° ${st.sun > .5 ? '<b style="color:#fbbf24">sunlit</b>' : 'shadow'} · Earth ${st.eel.toFixed(1)}° ${st.earth ? '<b style="color:#60a5fa">in view</b>' : 'blocked'}` +
-      (st.sel < 0 && st.sun > .5 ? '<br><span style="color:#fbbf24">The Sun is below a flat horizon, but this spot is higher than the land around it, so it can still see the Sun.</span>' : '');
+      (st.sel < 0 && st.sun > .5 ? '<br><span style="color:#fbbf24">The Sun is below a flat horizon, but this spot is higher than the land around it, so it can still see the Sun.</span>' : '') +
+      (st.eel < 0 && st.earth ? '<br><span style="color:#93c5fd">Earth is below a flat horizon too, but this high spot can still see it.</span>' : '');
     if (ST.tab === 'site') renderSiteTab();
     writeHash();
   });
@@ -66,7 +67,7 @@ function renderSiteTab() {
   $('overBtn').onclick = e => { e.preventDefault(); SC.overview(); };
   drawPano($('pano'), s, ST.t); drawStrip($('siteStrip'), s, ST.t, ST.mission && ST.mission.t === ST.t && ST.mission.site === s.id ? ST.mission.days : 0);
   const m = stats(s, ST.t, Math.min(D.T, ST.t + 24 * 365));
-  $('verdict').innerHTML = verdict(s, m, st); survival();
+  $('verdict').innerHTML = verdict(s, m, st); survival(); calendar(s);
   $('siteStats').innerHTML = stat('☀️ ' + pct(m.sun), 'of the time in sunlight (next 12 months)') + stat('🌍 ' + pct(m.earth), 'of the time Earth is in view (radio home)') + stat('🌑 ' + hrs(m.maxDark), 'longest night (no solar power)') +
     stat('📵 ' + hrs(m.maxBlk), 'longest time without Earth (comms blackout)') + stat(pct(m.both), 'sun AND Earth together', 'planner-only') + stat('⚡ ' + Math.round(m.powerW) + ' W', 'average power from a 10 m² solar panel', 'planner-only') +
     (s.validation ? stat(pct(s.validation.ours) + ' / ' + pct(s.validation.nasa), 'ours vs NASA map, 2009–13', 'planner-only') : '') +
@@ -284,6 +285,22 @@ function survival() {
   for (let k = 0; k <= n; k++) { const x = k / n * W, y = H - 4 * dpr - soc[k] * (H - 8 * dpr); k ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
   g.fillStyle = '#94a3b8'; g.font = `${10 * dpr}px system-ui`; g.fillText('battery %  (gold = sunshine)', 4 * dpr, 12 * dpr);
 }
+// 12-month forecast calendar: one square per day, classed by sunlit and Earth-visible hours
+function calendar(s) {
+  const ser = series(s), d0 = tDate(ST.t), y = d0.getUTCFullYear(), m0 = d0.getUTCMonth(); let h = '';
+  for (let mi = 0; mi < 12; mi++) {
+    const mm = (m0 + mi) % 12, yy = y + Math.floor((m0 + mi) / 12), first = Date.UTC(yy, mm, 1), nd = new Date(Date.UTC(yy, mm + 1, 0)).getUTCDate();
+    let cells = '';
+    for (let d = 1; d <= nd; d++) {
+      const a = tIndex(first + (d - 1) * 864e5); if (a + 24 > D.T) break;
+      let sh = 0, eh = 0; for (let t = a; t < a + 24; t++) { sh += ser.sun[t] >= 125; eh += ser.earth[t]; }
+      const c = sh === 0 ? 0 : sh === 24 && eh === 24 ? 3 : eh === 0 ? 1 : 2;
+      cells += `<i class="cl c${c}" data-t="${a}" title="${yy}-${String(mm + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}: Sun ${sh} h, Earth ${eh} h"></i>`;
+    }
+    h += `<div class="calrow"><span>${new Date(first).toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })} ${String(yy).slice(2)}</span>${cells}</div>`;
+  }
+  $('cal').innerHTML = h;
+}
 const HEATL = { sun: 'Sunlight', earth: 'Earth visibility', both: 'Sun AND Earth', slope: 'Flat ground', land: 'Best landing spots' };
 const stars = (v, icon) => icon.repeat(Math.round(v * 5)) + '<span style="opacity:.25">' + icon.repeat(5 - Math.round(v * 5)) + '</span>';
 function verdict(s, m, st) {
@@ -385,6 +402,7 @@ function demo() {
   });
   $('trust').onclick = e => { e.preventDefault(); switchTab('valid'); };
   $('briefBtn').onclick = missionBrief;
+  $('cal').onclick = e => { const t = e.target.dataset.t; if (t) { ST.t = +t; update(); } };
   const near = e => { const cv = $('pano'), r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; let best = null, bd = 100;
     for (const p of cv._pts || []) { const d = (p.x - x) ** 2 + (p.y - y) ** 2; if (d < bd) { bd = d; best = p; } } return best && { p: best, x, y }; };
   $('pano').onmousemove = e => { const h = near(e), tip = $('panoTip'); if (!h) { tip.hidden = true; $('pano').style.cursor = ''; return; }

@@ -221,6 +221,7 @@ function renderAbout() {
   <h3>Assumptions</h3><p class="meta">Observer 2 m above ground. Sunlight counts partial solar disc. Earth "visible" = Earth's center above the terrain horizon (direct-to-Earth line of sight). Power: 10 m² vertical sun-tracking array, 30% efficiency. Region pins are our model's best spots, not NASA-designated landing points.</p>
   <h3>Case study: IM-2 Athena (CLPS, March 2025)</h3><p class="meta">At Athena's reported landing location our model gives 100% sunlight and Earth visibility for its planned 10-day mission, on a 2.6° slope, so the site and date were sound. Its long-term sunlight (46.8%) matches NASA's map (46.8%). The lander was lost to a small crater and a tip-over, below the 80 m resolution used here. That shows where high-resolution hazard mapping comes next.</p>
   <h3>Landing regions</h3><p class="meta">The nine NASA Artemis III candidate regions (announced October 2024) use the official USGS footprints (McClernan 2024, doi:10.5066/P1MEQ6UK). Mons Mouton Plateau uses an approximate 15 km box. Each pin is our best spot inside the region: the most sunlight and Earth visibility on ground flatter than 8°.</p>
+  <h3>🚀 What's next</h3><ul class="meta"><li><b>Relay satellites:</b> add lunar relay coverage (such as NASA's LCRNS or ESA's Moonlight) so comms blackouts can be bridged.</li><li><b>Finer hazard maps:</b> 5–20 m LOLA and LROC terrain to catch small craters like the one that tipped Athena.</li><li><b>Rover traverse planning:</b> routes that stay in sunlight and in contact with Earth.</li><li><b>Thermal and power-system sizing:</b> pair the survival simulator with temperature models.</li></ul>
   <h3>Data</h3><p class="meta">NASA LRO LOLA (PDS Geosciences Node) · NASA/JPL NAIF SPICE · NASA PGDA Lunar Polar Illumination (Mazarico et al. 2011) · JPL Horizons. Built with Three.js, Chart.js, qrcode-generator, Python, NumPy, Numba, SpiceyPy.</p>`;
 }
 
@@ -251,7 +252,8 @@ function missionBrief() {
   body{font:14px/1.45 system-ui,sans-serif;color:#111;max-width:900px;margin:24px auto;padding:0 16px}h1{margin:0;font-size:24px}h2{font-size:16px;margin:18px 0 6px;border-bottom:1px solid #ccc}
   .g{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.g div{border:1px solid #ddd;border-radius:8px;padding:6px 8px}.g b{display:block;font-size:18px}
   table{border-collapse:collapse;width:100%;font-size:12px}td,th{border-bottom:1px solid #ddd;padding:3px 6px;text-align:left}img{width:100%;border-radius:6px}.m{color:#555;font-size:12px}
-  @media print{button{display:none}}</style></head><body>
+  .calrow{display:flex;align-items:center;gap:2px;margin:2px 0;font-size:11px}.calrow span{width:44px}.cl{display:inline-block;width:10px;height:10px;border-radius:2px}.c3{background:#22c55e}.c2{background:#eab308}.c1{background:#3b82f6}.c0{background:#7f1d1d}
+  @media print{button{display:none}.cl{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>
   <button onclick="print()" style="float:right;padding:6px 12px">🖨 Print / save PDF</button>
   <h1>🌙 Mission brief: ${s.name}</h1><div class="m">Polaris Window · generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC · <a href="${location.href}">open this view</a></div>
   <h2>Landing</h2><p><b>${fmtDate(d0)}</b>, ${days}-day mission · lat ${s.lat.toFixed(4)}°, lon ${s.lon.toFixed(4)}°E · elevation ${(s.elev / 1000).toFixed(2)} km${s.slope != null ? ` · slope ${s.slope}°` : ''}<br><span class="m">${s.note}</span></p>
@@ -260,6 +262,7 @@ function missionBrief() {
   <h2>Power survival check</h2><p>${$('svOut').innerText} <span class="m">(${$('svPanelV').textContent} solar panel, ${$('svBattV').textContent} battery, ${$('svLoadV').textContent} load, starting at landing.)</span></p>
   <h2>Horizon panorama (Sun path gold, Earth path blue, next 29.5 days)</h2><img src="${pano}" alt="Horizon panorama">
   <h2>Next 60 days (gold = sunlit, blue = Earth in view)</h2><img src="${strip}" alt="60-day strip">
+  <h2>12-month landing forecast (green = sun and Earth all day, yellow = partly, blue = sun without Earth, red = night)</h2>${$('cal').innerHTML}
   <h2>Day by day</h2><table><tr><th></th><th>Date (UTC)</th><th>Sun visible</th><th>Earth visible</th><th>Sun elevation range</th><th>Status</th></tr>${rows}</table>
   <h2>Method and trust</h2><p class="m">Terrain: NASA LRO LOLA LDEM_80S_80M; horizons ray-traced out to 220 km with lunar curvature; observer 2 m above ground. Ephemeris: NASA/JPL NAIF SPICE DE440, MOON_ME frame.
   Validation: sunlight map vs NASA PGDA r = ${v.grids.core.r.toFixed(3)}${v.earth ? `; Earth-visibility map vs NASA r = ${v.earth.grids.core.r.toFixed(3)}` : ''}; Sun/Earth elevation vs JPL Horizons within ${v.horizons ? v.horizons.max_abs_diff_deg.toFixed(4) : '0.001'}°.

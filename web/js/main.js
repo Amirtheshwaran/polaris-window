@@ -385,6 +385,13 @@ function demo() {
   });
   $('trust').onclick = e => { e.preventDefault(); switchTab('valid'); };
   $('briefBtn').onclick = missionBrief;
+  const near = e => { const cv = $('pano'), r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; let best = null, bd = 100;
+    for (const p of cv._pts || []) { const d = (p.x - x) ** 2 + (p.y - y) ** 2; if (d < bd) { bd = d; best = p; } } return best && { p: best, x, y }; };
+  $('pano').onmousemove = e => { const h = near(e), tip = $('panoTip'); if (!h) { tip.hidden = true; $('pano').style.cursor = ''; return; }
+    tip.hidden = false; $('pano').style.cursor = 'pointer'; tip.style.left = Math.min(h.x + 12, $('pano').clientWidth - 190) + 'px'; tip.style.top = Math.max(0, h.y - 34) + 'px';
+    tip.innerHTML = `${h.p.k} at ${h.p.el.toFixed(1)}°, ${h.p.vis ? 'visible' : 'hidden by terrain'}<br><b>${fmtDate(tDate(h.p.t))}</b>`; };
+  $('pano').onmouseleave = () => $('panoTip').hidden = true;
+  $('pano').onclick = e => { const h = near(e); if (h) { ST.t = h.p.t; $('panoTip').hidden = true; update(); } };
   ['svPanel', 'svBatt', 'svLoad', 'svDays'].forEach(id => $(id).oninput = survival);
   $('csvBtn').onclick = () => {
     const s = site(), a = ST.t, b = Math.min(D.T, a + 24 * 365), rows = ['utc,sun_az_deg,sun_el_deg,sun_horizon_deg,sun_disc_visible_frac,earth_az_deg,earth_el_deg,earth_horizon_deg,earth_visible'];

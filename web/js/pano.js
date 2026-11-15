@@ -7,7 +7,7 @@ export function drawPano(cv, s, t) {
   const g = cv.getContext('2d');
   // gather paths for the next synodic month
   const N = 708, sun = [], earth = [];
-  for (let k = 0; k < N && t + k < D.T; k += 2) { const st = siteState(s, t + k); sun.push(st); earth.push(st); }
+  for (let k = 0; k < N && t + k < D.T; k += 2) { const st = siteState(s, t + k); st.t = t + k; sun.push(st); earth.push(st); }
   const cur = siteState(s, t);
   let hmax = -90, hmin = 90; for (const h of s.prof) { hmax = Math.max(hmax, h); hmin = Math.min(hmin, h); }
   let emax = -90, emin = 90; for (const e of earth) { emax = Math.max(emax, e.eel); emin = Math.min(emin, e.eel); }
@@ -40,6 +40,8 @@ export function drawPano(cv, s, t) {
   // Earth phase as seen from the Moon: lit fraction = (1 - cos θ)/2, θ = angle Sun–site–Earth
   const sv = sunVec(t), ev = earthVec(t), ex = ev[0] - s.pos[0], ey = ev[1] - s.pos[1], ez = ev[2] - s.pos[2];
   const cth = (sv[0] * ex + sv[1] * ey + sv[2] * ez) / Math.hypot(ex, ey, ez), lit = (1 - cth) / 2;
+  // hit targets for hover/click (CSS pixels)
+  cv._pts = sun.map(p => ({ x: X(p.saz) / dpr, y: Y(p.sel) / dpr, t: p.t, k: '☀️ Sun', el: p.sel, vis: p.sun > .5 })).concat(earth.map(p => ({ x: X(p.eaz) / dpr, y: Y(p.eel) / dpr, t: p.t, k: '🌍 Earth', el: p.eel, vis: !!p.earth })));
   disc(cur.eaz, cur.eel, 5 * dpr, '#bfdbfe', '#3b82f699', 'Earth ' + cur.eel.toFixed(1) + '°' + (cur.earth ? '' : ' (blocked)'));
   { // phase disc: dark Earth, lit part toward the Sun's side on screen
     const x = X(cur.eaz), y = Y(cur.eel), r = 5 * dpr, dir = Math.sign(((cur.saz - cur.eaz + 540) % 360) - 180) || 1;

@@ -78,8 +78,8 @@
       <h2 id="siteName">-</h2>
       <p id="siteMeta" class="meta"></p>
       <div id="verdict"></div>
-      <canvas id="pano" height="300"></canvas>
-      <div class="panoLegend"><span class="k sun"></span>Sun path (next 29.5 days) <span class="k earth"></span>Earth path <span class="k dark"></span>Below terrain</div>
+      <div style="position:relative"><canvas id="pano" height="300"></canvas><div id="panoTip" hidden></div></div>
+      <div class="panoLegend">Hover a path to see when, click to go there. <span class="k sun"></span>Sun path (next 29.5 days) <span class="k earth"></span>Earth path <span class="k dark"></span>Below terrain</div>
       <div id="siteStats" class="stats"></div>
       <canvas id="siteStrip" height="70"></canvas>
       <p class="hint">Strip: next 60 days. Gold = sunlit, blue = Earth in view, black = blackout.</p>

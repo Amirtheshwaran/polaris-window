@@ -1,4 +1,7 @@
 // Core data + geometry. All lunar vectors are in the MOON_ME body-fixed frame (same frame as LOLA).
+// Planner option: Earth must clear the terrain by this many degrees to count as 'in view' (antenna elevation mask)
+export const OPT = { emask: 0 };
+export function setEMask(v) { OPT.emask = v; for (const s of D.sites.concat(D.custom)) s.series = null; }
 export const D = { meta: null, sites: [], ephem: null, T: 0, t0: 0, grids: {}, custom: [] };
 const R = 1737400, DEG = Math.PI / 180, SUN_R = 0.267;
 export const HOUR = 3600e3;
@@ -96,7 +99,7 @@ export function siteState(s, t) {
   const e = earthVec(t), ev = [e[0] - s.pos[0], e[1] - s.pos[1], e[2] - s.pos[2]];
   const [eaz, eel] = azel(s.F, 0, ev);
   const shz = hzAt(s.prof, 0, s.naz, saz), ehz = hzAt(s.prof, 0, s.naz, eaz);
-  return { saz, sel, shz, sun: sunFrac(sel, shz), eaz, eel, ehz, earth: eel > ehz ? 1 : 0 };
+  return { saz, sel, shz, sun: sunFrac(sel, shz), eaz, eel, ehz, earth: eel > ehz + OPT.emask ? 1 : 0 };
 }
 
 // Full hourly series for the whole ephemeris (cached): sun fraction (uint8 0..250), earth visible (0/1)
@@ -115,7 +118,7 @@ export function series(s) {
     x = E[o + 3] - P[0]; y = E[o + 4] - P[1]; z = E[o + 5] - P[2];
     u = x * F[0] + y * F[1] + z * F[2]; mx = x * F[3] + y * F[4] + z * F[5]; my = x * F[6] + y * F[7] + z * F[8];
     el = Math.atan2(u, Math.sqrt(mx * mx + my * my)) * R2D; az = Math.atan2(mx, my) * R2D; if (az < 0) az += 360;
-    const he = hz(az); earth[t] = el > he ? 1 : 0; eel[t] = el; emar[t] = el - he;
+    const he = hz(az) + OPT.emask; earth[t] = el > he ? 1 : 0; eel[t] = el; emar[t] = el - he;
   }
   return (s.series = { sun, earth, sel, eel, smar, emar });
 }
@@ -228,7 +231,7 @@ export async function gridAverage(g, a, b, metric, onProg) {
         const u = x * F[o] + y * F[o + 1] + z * F[o + 2], mx = x * F[o + 3] + y * F[o + 4] + z * F[o + 5], my = x * F[o + 6] + y * F[o + 7] + z * F[o + 8];
         const el = Math.atan2(u, Math.sqrt(mx * mx + my * my)) * R2D; let az = Math.atan2(mx, my) * R2D; if (az < 0) az += 360;
         const f = az * k360, i = f | 0, w = f - i, i0 = i % naz, hv = hz[h + i0] * (1 - w) + hz[h + (i0 + 1) % naz] * w;
-        if (el <= hv) v = 0;
+        if (el <= hv + OPT.emask) v = 0;
       }
       acc[k] += v;
     }

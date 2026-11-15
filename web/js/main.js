@@ -1,4 +1,4 @@
-import { series, rankWin, LOAD, SAFE_SLOPE, D, loadAll, allSites, addCustom, removeCustom, siteState, stats, findWindows, gridAverage, tIndex, tDate, fmtDate, fmtDay, pct, hrs, HOUR } from './data.js';
+import { OPT, setEMask, series, rankWin, LOAD, SAFE_SLOPE, D, loadAll, allSites, addCustom, removeCustom, siteState, stats, findWindows, gridAverage, tIndex, tDate, fmtDate, fmtDay, pct, hrs, HOUR } from './data.js';
 import * as SC from './scene.js';
 import { drawPano, drawStrip } from './pano.js';
 
@@ -20,11 +20,13 @@ function readHash() {
   if (p.get('cmp')) ST.cmp = p.get('cmp').split(',').map(id => ALIAS[id] || id);
   if (p.get('cx')) { const s = addCustom(+p.get('cx'), +p.get('cy'), p.get('cn') || 'Shared site', false); if (s) ST.site = s.id; }
   if (p.get('hm')) ST.heatReq = { metric: p.get('hm'), from: p.get('hf'), to: p.get('ht') };
+  if (p.get('em')) setEMask(+p.get('em') || 0);
 }
 function writeHash() {
   const s = site(), p = new URLSearchParams({ site: s.id, t: tDate(ST.t).toISOString().slice(0, 13), tab: ST.tab, mode: ST.mode, layer: ST.layer });
   if (s.custom) { p.set('cx', Math.round(s.x)); p.set('cy', Math.round(s.y)); p.set('cn', s.name); }
   if (ST.tab === 'compare') p.set('cmp', ST.cmp.join(','));
+  if (OPT.emask) p.set('em', OPT.emask);
   if (ST.heat) { p.set('hm', ST.heat.metric); p.set('hf', ST.heat.from); p.set('ht', ST.heat.to); }
   history.replaceState(null, '', '#' + p.toString());
 }
@@ -218,7 +220,7 @@ function renderAbout() {
   <li>NAIF SPICE (DE440 + lunar MOON_ME frame) gives hourly Sun and Earth vectors for 2025–2030.</li>
   <li>The browser compares Sun/Earth elevation with the terrain horizon at their azimuth, for any site and any date, with no server.</li>
   <li>Results are checked against NASA PGDA illumination maps and JPL Horizons (Validation tab).</li></ol>
-  <h3>Assumptions</h3><p class="meta">Observer 2 m above ground. Sunlight counts partial solar disc. Earth "visible" = Earth's center above the terrain horizon (direct-to-Earth line of sight). Power: 10 m² vertical sun-tracking array, 30% efficiency. Region pins are our model's best spots, not NASA-designated landing points.</p>
+  <h3>Assumptions</h3><p class="meta">Observer 2 m above ground. Sunlight counts partial solar disc. Earth "visible" = Earth's center above the terrain horizon (direct-to-Earth line of sight); in Planner mode you can require an antenna elevation mask of 1–5° above the terrain. Power: 10 m² vertical sun-tracking array, 30% efficiency. Region pins are our model's best spots, not NASA-designated landing points.</p>
   <h3>Case study: IM-2 Athena (CLPS, March 2025)</h3><p class="meta">At Athena's reported landing location our model gives 100% sunlight and Earth visibility for its planned 10-day mission, on a 2.6° slope, so the site and date were sound. Its long-term sunlight (46.8%) matches NASA's map (46.8%). The lander was lost to a small crater and a tip-over, below the 80 m resolution used here. That shows where high-resolution hazard mapping comes next.</p>
   <h3>Landing regions</h3><p class="meta">The nine NASA Artemis III candidate regions (announced October 2024) use the official USGS footprints (McClernan 2024, doi:10.5066/P1MEQ6UK). Mons Mouton Plateau uses an approximate 15 km box. Each pin is our best spot inside the region: the most sunlight and Earth visibility on ground flatter than 8°.</p>
   <h3>🚀 What's next</h3><ul class="meta"><li><b>Relay satellites:</b> add lunar relay coverage (such as NASA's LCRNS or ESA's Moonlight) so comms blackouts can be bridged.</li><li><b>Finer hazard maps:</b> 5–20 m LOLA and LROC terrain to catch small craters like the one that tipped Athena.</li><li><b>Rover traverse planning:</b> routes that stay in sunlight and in contact with Earth.</li><li><b>Thermal and power-system sizing:</b> pair the survival simulator with temperature models.</li></ul>
@@ -404,6 +406,7 @@ function demo() {
     else if (e.key === ' ' && document.activeElement === document.body) { e.preventDefault(); play(); }
   });
   $('trust').onclick = e => { e.preventDefault(); switchTab('valid'); };
+  $('emask').value = OPT.emask; $('emask').onchange = e => { setEMask(+e.target.value); toast(`Earth now counts as in view only when it is ${OPT.emask}° above the terrain`); update(); renderTab(); if ($('wOut').innerHTML && ST.tab === 'windows') runWindows(); };
   $('briefBtn').onclick = missionBrief;
   $('cal').onclick = e => { const t = e.target.dataset.t; if (t) { ST.t = +t; update(); } };
   const near = e => { const cv = $('pano'), r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; let best = null, bd = 100;

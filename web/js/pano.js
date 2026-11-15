@@ -1,4 +1,4 @@
-import { siteState, series, tDate, D, sunVec, earthVec } from './data.js';
+import { siteState, series, tDate, D, sunVec, earthVec, OPT } from './data.js';
 
 const DIRS = { 0: 'Earth side', 180: 'far side' };
 
@@ -29,7 +29,7 @@ export function drawPano(cv, s, t) {
   g.strokeStyle = '#a1a1aa'; g.lineWidth = 1.2 * dpr; g.beginPath();
   for (let i = 0; i <= n; i++) { const x = i / n * W, y = Y(s.prof[(i + n / 2) % n]); i ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
   // paths
-  const dots = (arr, azk, elk, hzk, col) => { for (const p of arr) { const vis = p[elk] > p[hzk]; g.fillStyle = vis ? col : '#475569'; g.globalAlpha = vis ? .9 : .55; g.fillRect(X(p[azk]) - dpr, Y(p[elk]) - dpr, 2 * dpr, 2 * dpr); } g.globalAlpha = 1; };
+  const dots = (arr, azk, elk, hzk, col) => { for (const p of arr) { const vis = p[elk] > p[hzk] + (elk === 'eel' ? OPT.emask : 0); g.fillStyle = vis ? col : '#475569'; g.globalAlpha = vis ? .9 : .55; g.fillRect(X(p[azk]) - dpr, Y(p[elk]) - dpr, 2 * dpr, 2 * dpr); } g.globalAlpha = 1; };
   dots(earth, 'eaz', 'eel', 'ehz', '#60a5fa'); dots(sun, 'saz', 'sel', 'shz', '#fbbf24');
   // current bodies
   const disc = (az, el, r, c1, c2, label) => {

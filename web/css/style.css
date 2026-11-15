@@ -5,16 +5,16 @@
    Master Stylesheet Architecture
    ========================================================================== */
 
-@import "tokens.css";
-@import "base.css";
-@import "header.css";
-@import "layout.css";
-@import "sites.css";
-@import "deck.css";
-@import "explore.css";
-@import "plan.css";
-@import "science.css";
-@import "compare.css";
-@import "timeline.css";
-@import "modals.css";
-@import "responsive.css";
+@import "tokens.css?v=20261115b";
+@import "base.css?v=20261115b";
+@import "header.css?v=20261115b";
+@import "layout.css?v=20261115b";
+@import "sites.css?v=20261115b";
+@import "deck.css?v=20261115b";
+@import "explore.css?v=20261115b";
+@import "plan.css?v=20261115b";
+@import "science.css?v=20261115b";
+@import "compare.css?v=20261115b";
+@import "timeline.css?v=20261115b";
+@import "modals.css?v=20261115b";
+@import "responsive.css?v=20261115b";

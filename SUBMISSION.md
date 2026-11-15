@@ -4,7 +4,7 @@
 Polaris Window
 
 ## High-Level Project Summary
-Polaris Window is a free, browser-based mission planner for the lunar south pole that answers the question planners actually ask: when and where should we land? It combines NASA LOLA terrain with NASA/JPL SPICE ephemeris to show, for any site and any hour from 2026 to 2030, whether the Sun (power) and Earth (direct-to-Earth comms) are above the real terrain horizon. You can watch real shadows sweep across a 3D south pole, stand at a site to see the Sun and Earth paths cross a 360° horizon, compare sites side by side, color the region with sunlight or comms heatmaps, and let the auto window finder rank the best landing dates for your mission's power and comms limits. Our illumination model reproduces NASA's published south-pole illumination map (r = 0.99) and matches JPL Horizons to 0.001°, so planners, educators and the public can trust the numbers.
+Polaris Window is a free, browser-based mission planner for the lunar south pole that answers the question planners actually ask: when and where should we land? It combines NASA LOLA terrain with NASA/JPL SPICE ephemeris to show, for any site and any hour from 2025 to 2030, whether the Sun (power) and Earth (direct-to-Earth comms) are above the real terrain horizon. You can watch real shadows sweep across a 3D south pole, stand at a site to see the Sun and Earth paths cross a 360° horizon, compare sites side by side, color the region with sunlight or comms heatmaps, and let the auto window finder rank the best landing dates for your mission's power and comms limits. Our illumination model reproduces NASA's published south-pole illumination map (r = 0.99) and matches JPL Horizons to 0.001°, so planners, educators and the public can trust the numbers.
 
 ## Link to Project Demo
 <YouTube link: 30-second video>
@@ -16,7 +16,7 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 **What it does**
 - **Live 3D south pole:** 384 × 384 km of real LOLA terrain. Scrub or play the timeline and the shadows move with the true Sun position.
 - **Stand at site:** a 360° panorama of the real horizon at any site, with the Sun path (gold) and Earth path (blue) for the next lunar month. Where a path dips behind terrain, you lose power or comms. One click puts you on the surface in 3D.
-- **Auto window finder:** enter a mission length (for example 14 days), minimum sunlight %, minimum Earth visibility %, maximum continuous darkness and maximum comms blackout. It evaluates every 6-hour landing slot from 2026 to 2030 at every site and ranks the best windows.
+- **Auto window finder:** enter a mission length (for example 14 days), minimum sunlight %, minimum Earth visibility %, maximum continuous darkness and maximum comms blackout. It evaluates every 6-hour landing slot from 2025 to 2030 at every site and ranks the best windows.
 - **Side-by-side compare:** 2 to 4 sites, with sunlight %, Earth visibility %, sun AND Earth %, longest darkness, longest blackout and estimated solar energy, plus charts for each lunation over a year.
 - **Heatmap mode:** colors the whole region by sunlight, Earth visibility or both, for any date range, computed live in the browser.
 - **Custom sites:** click anywhere on the terrain to add a site with full analysis.
@@ -38,7 +38,7 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 **What's next:** relay-satellite comms, slope and hazard layers from LOLA, power-system sizing, and higher-resolution (5 to 20 m) DEMs for site-scale planning.
 
 ## Use of Super Intelligence (SI)
-Yes. We used an AI coding assistant (Claude) to speed up writing the data pipeline and web application code, under our direction: the team chose the concept, the features, the data sources and the validation approach, and tested the results. ChatGPT was used for brainstorming feedback. All scientific data come from NASA sources. No AI-generated images, video or audio are used. AI assistance is acknowledged in the repository README.
+[Team to complete.]
 
 ## NASA Data
 - **LRO LOLA gridded polar DEM, LDEM_80S_80M** (PDS Geosciences Node): the terrain for the 3D view and all horizon calculations.
@@ -50,7 +50,7 @@ Yes. We used an AI coding assistant (Claude) to speed up writing the data pipeli
 ## Space Agency Partner Data and Other References
 - CSA Moon Exploration portal (background on Artemis and lunar exploration).
 - Mazarico, E., Neumann, G. A., Smith, D. E., Zuber, M. T., Torrence, M. H. (2011). Illumination conditions of the lunar polar regions using LOLA topography. *Icarus* 211, 1066–1081.
-- NASA Artemis III candidate landing regions (2024 announcement), used for approximate site locations.
+- McClernan, M.T. (2024). Down Selected Artemis III Candidate Landing Site Navigational Grids. USGS data release, https://doi.org/10.5066/P1MEQ6UK, the official footprints of the nine NASA Artemis III candidate landing regions (Oct 2024).
 - Open-source libraries: Three.js (MIT), Chart.js (MIT), NumPy, SciPy, Numba, SpiceyPy, Matplotlib (BSD/MIT).
 
 ---

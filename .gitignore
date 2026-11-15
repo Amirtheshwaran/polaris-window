@@ -1,5 +1,7 @@
 __pycache__/
 *.npy
 raw/
+graphify-out/
+.pytest_cache/
 
 HANDOVER.md

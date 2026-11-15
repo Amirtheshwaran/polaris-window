@@ -120,7 +120,7 @@
         <label>Max continuous darkness <input type="number" id="wDark" value="72" min="0" max="2000"> h</label>
         <label>Max comms blackout <input type="number" id="wBlack" value="96" min="0" max="2000"> h</label>
         <label>Search from <input type="date" id="wFrom" value="2027-01-01"> to <input type="date" id="wTo" value="2028-12-31"></label>
-        <label>Sites <select id="wSites"><option value="all">All sites</option><option value="sel">Selected site only</option></select></label>
+        <label>Sites <select id="wSites"><option value="all">All sites</option><option value="artemis">Artemis III regions only</option><option value="sel">Selected site only</option></select></label>
         </div>
         <p class="hint explore-only">Switch to <b>Planner</b> mode (top right) to set exact power and comms limits.</p>
       </div>
@@ -152,6 +152,8 @@
     <div class="tab" id="tab-heat">
       <h2>Heatmap mode</h2>
       <p class="meta">Colors the whole region by illumination or Earth visibility for any date range, computed live from terrain horizons.</p>
+      <div class="chips" id="hPresets"><button data-p="sun27">☀️ Sunlight in 2027</button><button data-p="ice">❄️ Where ice can hide</button><button data-p="comms">📡 Talk-to-Earth map</button><button data-p="land">🏆 Best landing spots</button></div>
+      <p class="hint">Or choose your own:</p>
       <label class="row">Metric <select id="hMetric"><option value="sun">Sunlight %</option><option value="earth">Earth visibility (DTE comms) %</option><option value="both">Sun AND Earth %</option><option value="slope">⛰️ Flat ground (landing safety)</option><option value="land">🏆 Best landing spots (sun + Earth + flat)</option></select></label>
       <label class="row">From <input type="date" id="hFrom" value="2027-01-01"> to <input type="date" id="hTo" value="2027-12-31"></label>
       <button class="primary" id="hRun">Compute heatmap</button>

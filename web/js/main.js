@@ -46,7 +46,7 @@ function update() {
     rafPending = false;
     const s = site(), st = siteState(s, ST.t), d = tDate(ST.t);
     $('time').value = ST.t; $('timeInput').value = d.toISOString().slice(0, 16);
-    SC.setTime(ST.t);
+    SC.setTime(ST.t); SC.setRays(s, st);
     $('hudSite').textContent = s.name;
     $('hudSun').innerHTML = `${fmtDate(d)} · Sun ${st.sel.toFixed(2)}° ${st.sun > .5 ? '<b style="color:#fbbf24">sunlit</b>' : 'shadow'} · Earth ${st.eel.toFixed(1)}° ${st.earth ? '<b style="color:#60a5fa">in view</b>' : 'blocked'}` +
       (st.sel < 0 && st.sun > .5 ? '<br><span style="color:#fbbf24">The Sun is below a flat horizon, but this spot is higher than the land around it, so it can still see the Sun.</span>' : '');
@@ -77,7 +77,7 @@ function renderSiteTab() {
 // ------------------------------------------------------------- window finder
 function runWindows() {
   const c = { days: +$('wLen').value, minSun: +$('wSun').value, minEarth: +$('wEarth').value, maxDark: +$('wDark').value, maxBlack: +$('wBlack').value, from: Date.parse($('wFrom').value), to: Date.parse($('wTo').value) };
-  const list = $('wSites').value === 'all' ? allSites() : [site()];
+  const list = $('wSites').value === 'all' ? allSites() : $('wSites').value === 'artemis' ? allSites().filter(x => x.artemis) : [site()];
   const res = list.map(s => ({ s, r: findWindows(s, c) })).sort((a, b) => !a.r.picked[0] ? 1 : !b.r.picked[0] ? -1 : rankWin(a.r.picked[0], b.r.picked[0]));
   const best = res.find(x => x.r.picked.length);
   let h = best ? (() => { const w = best.r.picked[0], d = tDate(w.a);
@@ -161,6 +161,7 @@ function renderCompare() {
 }
 
 // ------------------------------------------------------------- heatmap
+const HPRE = { sun27: ['sun', '2027-01-01', '2027-12-31'], ice: ['sun', '2025-01-01', '2030-12-30'], comms: ['earth', '2027-01-01', '2027-12-31'], land: ['land', '2027-01-01', '2027-12-31'] };
 async function runHeat(req) {
   const metric = req?.metric || $('hMetric').value, from = req?.from || $('hFrom').value, to = req?.to || $('hTo').value;
   $('hMetric').value = metric; $('hFrom').value = from; $('hTo').value = to;
@@ -178,8 +179,9 @@ async function runHeat(req) {
   const c = out.core; let best = 0, bi = 0; for (let i = 0; i < c.length; i++) if (c[i] > best) { best = c[i]; bi = i; }
   const label = HEATL[metric];
   let psr = 0; if (metric === 'sun') for (const v of c) psr += v === 0;
+  if (req && req.ice) $('hOut').innerHTML = '❄️ <b>Black areas never saw the Sun from 2025 to 2030.</b> These are cold traps where water ice can survive. ' ;
   if (metric === 'slope') { let safe = 0; for (const v of D.grids.core.slope) safe += v <= SAFE_SLOPE; $('hOut').innerHTML = `Bright = flat and safe, dark = steep (over 20°). ${(safe / c.length * 100).toFixed(0)}% of the central 80 km is flatter than ${SAFE_SLOPE}°, a typical lander limit. Slopes from LOLA at an 80 m baseline.`; writeHash(); return; }
-  $('hOut').innerHTML = `${label}, ${from} → ${to}. Best cell in the central 80 km: <b>${pct(best)}</b>.` + (metric === 'land' ? ` Only ground flatter than ${SAFE_SLOPE}° counts.` : '') + (metric === 'sun' ? ` ${(psr / c.length * 100).toFixed(1)}% of the central area got no sunlight at all in this period.` : '') +
+  $('hOut').innerHTML = (req && req.ice ? '❄️ <b>Black areas never saw the Sun from 2025 to 2030.</b> These are cold traps where water ice can survive. ' : '') + `${label}, ${from} → ${to}. Best cell in the central 80 km: <b>${pct(best)}</b>.` + (metric === 'land' ? ` Only ground flatter than ${SAFE_SLOPE}° counts.` : '') + (metric === 'sun' ? ` ${(psr / c.length * 100).toFixed(1)}% of the central area got no sunlight at all in this period.` : '') +
     ` <a href="#" id="heatBest">Drop a site at the best cell</a>`;
   $('heatBest').onclick = e => { e.preventDefault(); const n = D.grids.core.n, h = D.grids.core.half, i = Math.floor(bi / n), j = bi % n; pick((j + .5) / n * 2 * h - h, h - (i + .5) / n * 2 * h, 'Best ' + label); };
   writeHash();
@@ -398,6 +400,7 @@ function demo() {
   $$('#modes button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
   $$('#layerSeg button').forEach(b => b.onclick = () => b.dataset.layer === 'heat' && !ST.heat ? (switchTab('heat'), runHeat()) : setLayer(b.dataset.layer));
   $('wRun').onclick = runWindows; $('hRun').onclick = () => runHeat();
+  $$('#hPresets button').forEach(b => b.onclick = () => { const [metric, from, to] = HPRE[b.dataset.p]; runHeat({ metric, from, to, ice: b.dataset.p === 'ice' }); SC.overview(); });
   ['cFrom', 'cTo'].forEach(id => $(id).onchange = renderCompare);
   $$('#cmpMode button').forEach(b => b.onclick = () => { ST.cmpMode = b.dataset.c; $$('#cmpMode button').forEach(x => x.classList.toggle('on', x === b)); $('cmpSites').hidden = ST.cmpMode === 'dates'; $('cmpDates').hidden = ST.cmpMode !== 'dates'; renderCompare(); });
   ['dSite', 'dLen'].forEach(id => $(id).onchange = renderDates); $$('#dDates input').forEach(i => i.onchange = renderDates);

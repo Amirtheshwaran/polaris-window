@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { D, sunVec, earthVec, gridIllum, heightAt } from './data.js';
 
 const R = 1737400;
-let renderer, scene, camera, controls, meshR, meshC, sunSpr, earthSpr, markers = new THREE.Group(), regionGrp = new THREE.Group(), raycaster = new THREE.Raycaster();
+let renderer, scene, camera, controls, meshR, meshC, sunSpr, earthSpr, markers = new THREE.Group(), regionGrp = new THREE.Group(), rays = new THREE.Group(), raycaster = new THREE.Raycaster();
 const U = {
   illumR: { value: null }, illumC: { value: null }, heatR: { value: null }, heatC: { value: null }, ramp: { value: null },
   mode: { value: 0 }, sunDir: { value: new THREE.Vector3(1, .02, 0) }, coreHalf: { value: 40000 }, regHalf: { value: 192000 }, isCore: { value: 0 },
@@ -94,7 +94,7 @@ export function initScene(el, pick) {
   bufR = new Uint8Array(D.grids.regional.n ** 2); bufC = new Uint8Array(D.grids.core.n ** 2);
   meshR = buildMesh(D.terrain, D.meta.terrain.half, D.meta.terrain.n, 0);
   meshC = buildMesh(D.terrainCore, D.meta.terrain_core.half, D.meta.terrain_core.n, 1);
-  applyHeights(meshR); applyHeights(meshC); scene.add(meshR, meshC, markers, regionGrp);
+  applyHeights(meshR); applyHeights(meshC); scene.add(meshR, meshC, markers, regionGrp, rays);
   // stars
   const sp = new Float32Array(3000 * 3); for (let i = 0; i < sp.length; i += 3) { const v = new THREE.Vector3().randomDirection().multiplyScalar(3000); sp.set([v.x, v.y, v.z], i); }
   const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
@@ -124,6 +124,20 @@ export function setTime(t) {
   U.illumC.value.image.data.set(gridIllum(D.grids.core, t, bufC)); U.illumC.value.needsUpdate = true;
 }
 
+// Sight-lines from the selected site toward the Sun (gold) and Earth (blue): solid = clear, dashed = blocked by terrain.
+// Vertical component scaled by the height exaggeration so the lines match the exaggerated terrain.
+export function setRays(s, st) {
+  rays.children.forEach(c => { c.geometry.dispose(); c.material.dispose(); }); rays.clear();
+  if (!s || standingMode) return;
+  const o = new THREE.Vector3(s.x / 1000, sceneY(s.x, s.y, s.elev) + 0.3, -s.y / 1000);
+  const mk = (dir, color, vis) => {
+    const d = dir.clone(); d.y *= exag; d.normalize();
+    const g = new THREE.BufferGeometry().setFromPoints([o, o.clone().add(d.multiplyScalar(45))]);
+    const l = new THREE.Line(g, vis ? new THREE.LineBasicMaterial({ color }) : new THREE.LineDashedMaterial({ color, dashSize: 1.2, gapSize: 1.2, transparent: true, opacity: .45 }));
+    if (!vis) l.computeLineDistances(); rays.add(l);
+  };
+  mk(U.sunDir.value, 0xfbbf24, st.sun > .5); mk(earthSpr.position.clone().normalize(), 0x60a5fa, !!st.earth);
+}
 export function setHeat(name, vals, vmax) {
   const t = name === 'core' ? U.heatC.value : U.heatR.value, d = t.image.data;
   for (let i = 0; i < vals.length; i++) d[i] = Math.min(255, 255 * vals[i] / vmax); t.needsUpdate = true;

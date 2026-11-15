@@ -1,5 +1,9 @@
 # Polaris Window
 
+<a href="https://amirtheshwaran.github.io/polaris-window/media/polaris-window-demo.mp4"><img src="media/demo-film-poster.jpg" alt="Watch the 30-second Polaris Window demo film" width="100%"></a>
+
+### ▶ [Watch the 30-second demo film](https://amirtheshwaran.github.io/polaris-window/media/polaris-window-demo.mp4)
+
 **Don't just see the lunar south pole. Know exactly when and where to land.**
 
 NASA Space Apps Challenge 2026: *Lunar Landing Site Navigator*

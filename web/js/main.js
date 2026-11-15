@@ -246,8 +246,10 @@ function renderSiteTab() {
   const days = mission ? mission.days : Math.min(365, (D.T - ST.t) / 24);
   const period = mission ? `${days}-day mission` : `Next ${Math.ceil(days)} days`;
   const m = stats(s, ST.t, Math.min(D.T, ST.t + 24 * days));
-  document.querySelector('.metric-card.sun .metric-sub').textContent = period;
-  document.querySelector('.metric-card.earth .metric-sub').textContent = period;
+  const sunSub = $('metricSunSub') || document.querySelector('.metric-card.sun .metric-sub');
+  if (sunSub) sunSub.textContent = period;
+  const earthSub = $('metricEarthSub') || document.querySelector('.metric-card.earth .metric-sub');
+  if (earthSub) earthSub.textContent = period;
 
   // Update Primary 3 Decision Metrics
   if ($('metricSunValue')) $('metricSunValue').textContent = pct(m.sun);

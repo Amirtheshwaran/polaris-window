@@ -422,6 +422,8 @@ function demo() {
   $$('#welcome button').forEach(b => b.addEventListener('click', () => setTimeout(hint, 1500)));
   if (isDemo) setTimeout(demo, 800);
   $$('#welcome button').forEach(b => b.onclick = () => { $('welcome').hidden = true; const w = b.dataset.w;
-    if (w === 'tour') tour(0); else if (w === 'date') { switchTab('windows'); runWindows(); } else { switchTab('site'); selectSite('ridge'); } });
+    if (w === 'tour') tour(0); else if (w === 'date') { switchTab('windows'); runWindows(); }
+    else if (w === 'game') { ST.t = tIndex(Date.parse('2027-04-10T00:00Z')); switchTab('site'); selectSite('a3_malapert_massif'); setTimeout(() => document.querySelector('.surv').scrollIntoView({ behavior: 'smooth' }), 400); }
+    else { switchTab('site'); selectSite('ridge'); } });
   window.PW = { ST, D, tour, runWindows, runHeat, selectSite, switchTab, demo, goLanding: id => { const s = allSites().find(x => x.id === id); ST.t = tIndex(Date.parse(s.landed)); ST.mission = { site: id, t: ST.t, days: 10 }; selectSite(id); } }; // console / demo-recording hooks
 })();

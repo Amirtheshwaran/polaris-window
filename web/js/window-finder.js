@@ -28,7 +28,7 @@ export function initWindowFinder() {
     };
   });
 
-  const goBtn = $('wGo');
+  const goBtn = $('wRun') || $('wGo');
   if (goBtn) goBtn.onclick = runWindows;
 
   ['dSite', 'dLen'].forEach(id => {

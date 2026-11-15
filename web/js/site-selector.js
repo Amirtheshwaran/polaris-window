@@ -12,22 +12,33 @@ let onSelectCallback = null;
 export function initSiteSelector(onSelect) {
   onSelectCallback = onSelect;
 
-  $('sites-toggle-pill').onclick = () => {
-    $('panel-sites').classList.remove('collapsed');
-    $('panel-sites').inert = false;
-    $('sites-toggle-pill').style.display = 'none';
+  const toggleSites = (show) => {
+    const p = $('panel-sites');
+    const pill = $('sites-toggle-pill');
+    if (!p || !pill) return;
+    const isClosed = p.classList.contains('collapsed');
+    const nextState = show !== undefined ? show : isClosed;
+    p.classList.toggle('collapsed', !nextState);
+    p.inert = !nextState;
+    pill.style.display = nextState ? 'none' : 'flex';
   };
 
-  $('sitesCloseBtn').onclick = () => {
-    $('panel-sites').classList.add('collapsed');
-    $('panel-sites').inert = true;
-    $('sites-toggle-pill').style.display = 'flex';
-  };
+  const pill = $('sites-toggle-pill');
+  if (pill) pill.onclick = () => toggleSites(true);
 
-  $('siteSearch').oninput = e => {
-    ST.searchQuery = e.target.value;
-    renderSiteList();
-  };
+  const closeBtn = $('sites-close-btn') || $('sitesCloseBtn');
+  if (closeBtn) closeBtn.onclick = () => toggleSites(false);
+
+  const overBtn = $('overBtn');
+  if (overBtn) overBtn.onclick = () => SC.overview();
+
+  const searchInput = $('siteSearchInput') || $('siteSearch');
+  if (searchInput) {
+    searchInput.oninput = e => {
+      ST.searchQuery = e.target.value;
+      renderSiteList();
+    };
+  }
 
   $$('.site-category-chips button').forEach(b => {
     b.onclick = () => {

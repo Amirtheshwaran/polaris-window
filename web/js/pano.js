@@ -41,7 +41,7 @@ export function drawPano(cv, s, t) {
   const sv = sunVec(t), ev = earthVec(t), ex = ev[0] - s.pos[0], ey = ev[1] - s.pos[1], ez = ev[2] - s.pos[2];
   const cth = (sv[0] * ex + sv[1] * ey + sv[2] * ez) / Math.hypot(ex, ey, ez), lit = (1 - cth) / 2;
   // hit targets for hover/click (CSS pixels)
-  cv._pts = sun.map(p => ({ x: X(p.saz) / dpr, y: Y(p.sel) / dpr, t: p.t, k: '☀️ Sun', el: p.sel, vis: p.sun > .5 })).concat(earth.map(p => ({ x: X(p.eaz) / dpr, y: Y(p.eel) / dpr, t: p.t, k: '🌍 Earth', el: p.eel, vis: !!p.earth })));
+  cv._pts = sun.map(p => ({ x: X(p.saz) / dpr, y: Y(p.sel) / dpr, t: p.t, k: 'Sun', el: p.sel, vis: p.sun > .5 })).concat(earth.map(p => ({ x: X(p.eaz) / dpr, y: Y(p.eel) / dpr, t: p.t, k: 'Earth', el: p.eel, vis: !!p.earth })));
   disc(cur.eaz, cur.eel, 5 * dpr, '#bfdbfe', '#3b82f699', 'Earth ' + cur.eel.toFixed(1) + '°' + (cur.earth ? '' : ' (blocked)'));
   { // phase disc: dark Earth, lit part toward the Sun's side on screen
     const x = X(cur.eaz), y = Y(cur.eel), r = 5 * dpr, dir = Math.sign(((cur.saz - cur.eaz + 540) % 360) - 180) || 1;

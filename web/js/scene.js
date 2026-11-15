@@ -175,7 +175,7 @@ export function setMarkers(sites, selId, onSel) {
     const l = document.createElement('div'); l.className = 'lbl' + (on ? ' on' : ''); l.textContent = s.name; l.onclick = () => onSel(s.id);
     l._p = new THREE.Vector3(s.x / 1000, y + 6.5, -s.y / 1000); box.appendChild(l); labelEls.push(l);
   }
-  for (const [txt, x, y] of [['⊕ South Pole', 0, 0], ['🌍 Earth is this way →', 0, 150000]]) {
+  for (const [txt, x, y] of [['⊕ South Pole', 0, 0], ['Earth direction →', 0, 150000]]) {
     const l = document.createElement('div'); l.className = 'lbl geo'; l.textContent = txt;
     l._p = new THREE.Vector3(x / 1000, sceneY(x, y, heightAt(x, y)) + 3, -y / 1000); box.appendChild(l); labelEls.push(l);
   }

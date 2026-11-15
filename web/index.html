@@ -2,198 +2,598 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Polaris Window: Lunar South Pole Landing Planner</title>
 <meta name="description" content="Pick when and where to land at the lunar south pole. Real NASA LOLA terrain, SPICE ephemeris, validated against NASA illumination maps.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23111827'/><path d='M4 20 Q16 10 28 20' stroke='%23fbbf24' stroke-width='3' fill='none'/><circle cx='22' cy='9' r='3' fill='%2360a5fa'/></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%2305070b'/><path d='M4 20 Q16 10 28 20' stroke='%23f59e0b' stroke-width='2.5' fill='none'/><circle cx='22' cy='9' r='2.5' fill='%2338bdf8'/></svg>">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Polaris Window: when and where to land at the Moon's south pole">
-<meta property="og:description" content="A weather forecast for Moon landings. Real NASA terrain and ephemeris, Artemis III candidate regions, best landing dates, and results checked against NASA maps.">
+<meta property="og:description" content="A mission planner for Moon landings. Real NASA terrain and ephemeris, Artemis III candidate regions, best landing dates, and results checked against NASA maps.">
 <meta property="og:image" content="https://amirtheshwaran.github.io/polaris-window/og.png">
 <meta property="og:url" content="https://amirtheshwaran.github.io/polaris-window/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#05070d">
+<meta name="theme-color" content="#05070b">
 <link rel="stylesheet" href="css/style.css">
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js","three/addons/controls/OrbitControls.js":"./vendor/OrbitControls.js"}}</script>
 <script src="vendor/chart.umd.min.js"></script>
 <script src="vendor/qrcode.js" defer></script>
 </head>
-<body>
+<body class="explore">
+
+<!-- Command Header -->
 <header>
-  <div class="brand"><svg viewBox="0 0 32 32" width="26" height="26"><circle cx="16" cy="16" r="14" fill="#0b1220" stroke="#334155"/><path d="M4 20 Q16 10 28 20" stroke="#fbbf24" stroke-width="3" fill="none"/><circle cx="22" cy="9" r="3" fill="#60a5fa"/></svg>
-    <div><b>Polaris Window</b><span>Know exactly when and where to land at the lunar south pole</span></div></div>
-  <nav id="modes">
-    <button data-mode="explore" class="on">Explore</button>
-    <button data-mode="planner">Planner</button>
+  <div class="brand-block">
+    <div class="brand-mark">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="14" fill="#0d121c" stroke="#27374e" stroke-width="1.2"/>
+        <path d="M4 20 Q16 10 28 20" stroke="#f59e0b" stroke-width="2.2" fill="none"/>
+        <circle cx="22" cy="9" r="2.5" fill="#38bdf8"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <span class="brand-title">Polaris Window</span>
+      <span class="brand-sub">Lunar South Pole Landing Planner · NASA LOLA Altimetry</span>
+    </div>
+  </div>
+
+  <!-- Primary 3 Destinations Navigation -->
+  <nav class="primary-nav" aria-label="Main Navigation">
+    <button id="nav-explore" data-dest="explore" class="active" title="Explore Lunar South Pole Terrain & Candidate Sites">Explore</button>
+    <button id="nav-plan" data-dest="plan" title="Plan Mission Windows & Compare Sites">Plan</button>
+    <button id="nav-science" data-dest="science" title="Methodology, Validation & Traceable NASA Datasets">Science</button>
   </nav>
-  <div class="hdr-actions">
-    <button id="tourBtn" title="Guided tour">▶ Guided tour</button>
-    <a href="learn.html" class="btnlink" title="Six short missions for students">🎓 Classroom</a>
-    <button id="shareBtn" title="Copy a link to this exact view">🔗 Share view</button>
+
+  <!-- Header Actions & Utilities -->
+  <div class="header-actions">
+    <div class="seg" id="layerSeg" title="Map Visualization Mode">
+      <button data-layer="light" class="on" title="Live Sunlight & Shadows">Live Sun</button>
+      <button data-layer="heat" title="Terrain Illumination Heatmap">Heatmap</button>
+    </div>
+    <button id="tourBtn" class="nav-pill-btn" title="Take an interactive guided tour">Tour</button>
+    <a href="learn.html" class="nav-pill-btn" title="Classroom Missions for students">Classroom</a>
+    <button id="shareBtn" class="nav-pill-btn" title="Share link & QR code for this view">Share</button>
+    <button id="settingsBtn" class="nav-pill-btn" title="Telemetry & Display Settings">Settings</button>
   </div>
 </header>
 
-<main>
-  <aside id="left">
-    <h3>Landing sites</h3>
-    <ul id="siteList"></ul>
-    <p class="hint">Click anywhere on the terrain to drop your own site.</p>
-    <h3>Map layer</h3>
-    <div class="seg" id="layerSeg">
-      <button data-layer="light" class="on">Live sunlight</button>
-      <button data-layer="heat">Heatmap</button>
+<!-- Main App Shell -->
+<main id="app-shell">
+  <!-- 3D Lunar Terrain Centerpiece Canvas -->
+  <div id="view3d"></div>
+
+  <!-- 3D Interactive Markers Container -->
+  <div id="labels"></div>
+
+  <!-- HUD Telemetry Overlay -->
+  <div id="hud-overlay">
+    <div class="hud-telemetry-badge">
+      <div class="hud-site-title">
+        <span class="status-dot"></span>
+        <span id="hudSite">Connecting Ridge</span>
+      </div>
+      <div id="hudSun" class="hud-site-coords">Calculating ephemeris…</div>
     </div>
-    <label class="row planner-only">Height ×<input type="range" id="exag" min="1" max="6" step="0.5" value="3"><span id="exagV">3</span></label>
-    <label class="row planner-only" title="Real antennas need Earth to clear the terrain by a margin">📡 Comms mask <select id="emask"><option value="0">0° (line of sight)</option><option value="1">1° above terrain</option><option value="2">2° above terrain</option><option value="5">5° above terrain</option></select></label>
+    <a id="trust" href="#" class="hud-trust-tag" title="Inspect comparison with NASA reference maps">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      Compared with NASA reference maps · r = 0.99
+    </a>
     <div id="legend"></div>
+  </div>
+
+  <!-- Non-blocking Initial Exploration Banner -->
+  <div id="intro-banner">
+    <div class="intro-text">
+      <b>Find when and where to land on the Moon.</b> NASA LOLA terrain &amp; SPICE ephemeris.
+    </div>
+    <div class="intro-actions">
+      <button id="introTourBtn" class="intro-btn primary-action">1-Min Tour</button>
+      <button id="introDismissBtn" class="intro-btn panel-icon-btn" title="Dismiss banner">✕</button>
+    </div>
+  </div>
+
+  <!-- Floating Site Browser Toggle Button (Visible when drawer is closed) -->
+  <button id="sites-toggle-pill" aria-label="Toggle Landing Sites Drawer">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="12 8 8 12 12 16 16 12 12 8"></polygon></svg>
+    <span>Sites</span>
+    <span class="site-count-badge" id="siteCountBadge">14</span>
+  </button>
+
+  <!-- Floating Left Panel: Landing Site Browser -->
+  <aside id="panel-sites">
+    <div class="panel-header-bar">
+      <span class="panel-header-title">Landing Sites</span>
+      <div style="display:flex;gap:4px">
+        <button id="overBtn" class="panel-icon-btn" title="Reset Camera to South Pole Overview">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18M3 12h18"></path></svg>
+        </button>
+        <button id="sites-close-btn" class="panel-icon-btn" title="Collapse panel">✕</button>
+      </div>
+    </div>
+
+    <div class="site-filter-bar">
+      <input type="text" id="siteSearchInput" class="site-search-input" placeholder="Search sites or coordinates…" aria-label="Search sites">
+      <div class="site-category-chips">
+        <button class="category-chip active" data-cat="all">All</button>
+        <button class="category-chip" data-cat="artemis">Artemis III</button>
+        <button class="category-chip" data-cat="science">Science</button>
+        <button class="category-chip" data-cat="clps">CLPS</button>
+      </div>
+    </div>
+
+    <ul id="siteList" class="sites-scroll-list" role="listbox" aria-label="Landing Sites"></ul>
+    <div class="hint" style="padding:8px 12px;border-top:1px solid var(--border-subtle);margin:0;font-size:11px;">
+      Click anywhere on the lunar terrain to add a custom site.
+    </div>
   </aside>
 
-  <section id="center">
-    <div id="view3d"></div>
-    <div id="hud">
-      <div id="hudSite"></div>
-      <div id="hudSun"></div>
-      <a id="trust" href="#" title="See how our results compare with NASA">✅ Matches NASA sunlight and Earth maps (r = 0.99)</a>
-    </div>
-    <div id="tourBox" hidden><p id="tourText"></p><div><button id="tourSpeak" title="Read the tour aloud" aria-pressed="false">🔊 Read aloud</button><button id="tourPrev">‹</button><span id="tourStep"></span><button id="tourNext">Next ›</button><button id="tourEnd">✕</button></div></div>
-    <div id="tlHint" hidden>👇 Drag the timeline (or press ▶) to move the Sun and watch the shadows</div>
-    <div id="timeline">
-      <button id="play" title="Play / pause" aria-label="Play or pause time">▶</button>
-      <select id="speed" title="Simulation speed"><option value="1">1 h/frame</option><option value="4" selected>4 h/frame</option><option value="12">12 h/frame</option></select>
-      <button id="tBack" title="Back 1 day (Shift+←)" aria-label="Back one day">−1d</button><input type="range" id="time" min="0" max="1" value="0" aria-label="Date and time"><button id="tFwd" title="Forward 1 day (Shift+→)" aria-label="Forward one day">+1d</button>
-      <input type="datetime-local" id="timeInput" step="3600">
-    </div>
-  </section>
-
-  <aside id="right">
-    <nav id="tabs">
-      <button data-tab="site" class="on">🧍 Stand at site</button>
-      <button data-tab="windows">📅 Best landing date</button>
-      <button data-tab="compare">⚖️ Compare</button>
-      <button data-tab="heat">🗺️ Heatmap</button>
-      <button data-tab="valid">✅ NASA check</button>
-      <button data-tab="about">ℹ️ About</button>
+  <!-- Floating Right Panel: Mission Deck (Explore, Plan, Science) -->
+  <aside id="panel-deck">
+    <!-- Hidden legacy compatibility navigation for deep-links and existing JS -->
+    <nav id="tabs" style="display:none;" aria-hidden="true">
+      <button data-tab="site" class="on"></button>
+      <button data-tab="windows"></button>
+      <button data-tab="compare"></button>
+      <button data-tab="heat"></button>
+      <button data-tab="valid"></button>
+      <button data-tab="about"></button>
     </nav>
 
-    <div class="tab on" id="tab-site">
-      <h2 id="siteName">-</h2>
-      <p id="siteMeta" class="meta"></p>
-      <div id="verdict"></div>
-      <div style="position:relative"><canvas id="pano" height="300"></canvas><div id="panoTip" hidden></div></div>
-      <div class="panoLegend">Hover a path to see when, click to go there. <span class="k sun"></span>Sun path (next 29.5 days) <span class="k earth"></span>Earth path <span class="k dark"></span>Below terrain</div>
-      <div id="siteStats" class="stats"></div>
-      <canvas id="siteStrip" height="70"></canvas>
-      <p class="hint">Strip: next 60 days. Gold = sunlit, blue = Earth in view, black = blackout.</p>
-      <h3>📆 12-month landing forecast</h3>
-      <div id="cal"></div>
-      <p class="hint"><span class="cl c3"></span>sun + Earth all day <span class="cl c2"></span>partly <span class="cl c1"></span>sun, no Earth <span class="cl c0"></span>dark. Click a day to go there.</p>
-      <details class="gloss explore-only"><summary>📚 What do these words mean?</summary>
-        <dl>
-          <dt>Horizon</dt><dd>The line where the ground meets the sky. Here it's bumpy because of mountains and craters.</dd>
-          <dt>Elevation (°)</dt><dd>How high something is above a flat horizon. 0° is level, 90° is straight up. At the south pole the Sun stays within about 1.5° of level.</dd>
-          <dt>Azimuth (°)</dt><dd>Which direction you're looking, all the way around from 0° to 360°. Here 0° points toward the side of the Moon that faces Earth.</dd>
-          <dt>Lunar day</dt><dd>One day-night cycle on the Moon lasts about 29.5 Earth days, so the Sun takes a month to go around the horizon once.</dd>
-          <dt>Permanently shadowed region</dt><dd>A crater floor that sunlight never reaches. It's colder than about −170 °C and can trap water ice.</dd>
-          <dt>Direct-to-Earth (DTE) comms</dt><dd>Talking to Earth by radio in a straight line. If a hill blocks Earth, the radio link is lost.</dd>
-          <dt>Libration</dt><dd>The Moon's slight wobble, which makes Earth bob up and down in the lunar sky over about a month.</dd>
-          <dt>Slope</dt><dd>How tilted the ground is. Landers need gentle ground, usually less than about 8°.</dd>
-        </dl>
-      </details>
-      <div class="surv">
-        <h3>🔋 Will your lander survive?</h3>
-        <p class="meta">Pick your equipment. We charge the battery with the real sunlight at this site, hour by hour, starting from the date on the timeline.</p>
-        <label class="row">☀️ Solar panel <input type="range" id="svPanel" min="1" max="20" step="1" value="4"><b id="svPanelV"></b></label>
-        <label class="row">🔋 Battery <input type="range" id="svBatt" min="5" max="300" step="5" value="40"><b id="svBattV"></b></label>
-        <label class="row">💡 Power use <input type="range" id="svLoad" min="100" max="3000" step="50" value="500"><b id="svLoadV"></b></label>
-        <label class="row">🕒 Mission <input type="range" id="svDays" min="3" max="60" step="1" value="14"><b id="svDaysV"></b></label>
-        <div id="svOut"></div>
-        <canvas id="svChart" height="90"></canvas>
-      </div>
-      <button id="briefBtn" class="primary" style="margin-top:10px">📄 Mission brief for this site and date (print / save as PDF)</button>
-      <div class="planner-only"><button id="csvBtn">⬇ Download hourly Sun/Earth data for this site (CSV, 12 months)</button></div>
-    </div>
+    <!-- Hidden compatibility mode selector -->
+    <nav id="modes" style="display:none;" aria-hidden="true">
+      <button data-mode="explore" class="on"></button>
+      <button data-mode="planner"></button>
+    </nav>
 
-    <div class="tab" id="tab-windows">
-      <h2>📅 When should we land?</h2>
-      <p class="meta">Like a weather forecast for the Moon: we check every possible landing time from 2025 to 2030 at every site and rank the best ones.</p>
-      <div class="seg" id="wPreset"><button data-p="bal" class="on">⚖️ Balanced</button><button data-p="power">☀️ Most power</button><button data-p="comms">📡 Always talk to Earth</button></div>
-      <div class="form">
-        <label>🕒 How long is the mission? <input type="number" id="wLen" value="14" min="1" max="90"> days</label>
-        <div class="planner-only">
-        <label>Min sunlight <input type="number" id="wSun" value="60" min="0" max="100"> %</label>
-        <label>Min Earth visibility <input type="number" id="wEarth" value="50" min="0" max="100"> %</label>
-        <label>Max continuous darkness <input type="number" id="wDark" value="72" min="0" max="2000"> h</label>
-        <label>Max comms blackout <input type="number" id="wBlack" value="96" min="0" max="2000"> h</label>
-        <label>Search from <input type="date" id="wFrom" value="2027-01-01"> to <input type="date" id="wTo" value="2028-12-31"></label>
-        <label>Sites <select id="wSites"><option value="all">All sites</option><option value="artemis">Artemis III regions only</option><option value="sel">Selected site only</option></select></label>
+    <div class="deck-body">
+
+      <!-- =============================================================== -->
+      <!-- DESTINATION 1: EXPLORE (Tab: site)                              -->
+      <!-- =============================================================== -->
+      <div class="tab on" id="tab-site">
+        <!-- Site Header Card -->
+        <div class="site-card-header">
+          <div class="site-badge-row">
+            <span id="siteTypeBadge" class="site-type-badge artemis">NASA Artemis III Region</span>
+            <span id="siteElevationBadge" class="site-type-badge mono">1.84 km</span>
+          </div>
+          <h2 id="siteName" class="site-card-title">Connecting Ridge</h2>
+          <div id="siteMeta" class="site-card-coords">lat -89.44°, lon 137.2°E</div>
         </div>
-        <p class="hint explore-only">Switch to <b>Planner</b> mode (top right) to set exact power and comms limits.</p>
+
+        <!-- The 3 Primary Decision Metrics -->
+        <div class="metrics-grid-primary">
+          <div class="metric-card sun">
+            <span class="metric-label">Sunlight</span>
+            <span id="metricSunValue" class="metric-value">--%</span>
+            <span class="metric-sub">Annual Avg</span>
+          </div>
+          <div class="metric-card earth">
+            <span class="metric-label">Direct Comms</span>
+            <span id="metricEarthValue" class="metric-value">--%</span>
+            <span class="metric-sub">Earth in View</span>
+          </div>
+          <div class="metric-card slope">
+            <span class="metric-label">Surface Slope</span>
+            <span id="metricSlopeValue" class="metric-value">--°</span>
+            <span id="metricSlopeSub" class="metric-sub">Safe (&lt;8°)</span>
+          </div>
+        </div>
+
+        <!-- Prominent Primary Call-to-Action -->
+        <div class="action-banner-primary">
+          <div class="action-banner-text">
+            Find landing dates that meet your sunlight and Earth visibility requirements.
+          </div>
+          <button id="primaryFindWindowBtn" class="action-banner-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            Find Landing Window
+          </button>
+        </div>
+
+        <!-- Live Site Assessment / Verdict -->
+        <div id="verdict"></div>
+
+        <!-- Collapsible Tool 1: 360° Horizon Profile & 60-Day Strip -->
+        <div class="accordion-section open" id="acc-pano">
+          <div class="accordion-header">
+            <span class="accordion-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M12 2v20"></path></svg>
+              Horizon Skyline &amp; Orbital Paths
+            </span>
+            <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-content">
+            <div style="position:relative">
+              <canvas id="pano" height="300"></canvas>
+              <div id="panoTip" hidden></div>
+            </div>
+            <div class="panoLegend">
+              Hover path to inspect time. <span class="k sun"></span>Sun path <span class="k earth"></span>Earth path <span class="k dark"></span>Terrain silhouette
+            </div>
+            <div class="stand-actions-row">
+              <button id="standBtn" class="stand-btn-sm">Stand at Site (Face Sun)</button>
+              <button id="standEarth" class="stand-btn-sm">Stand at Site (Face Earth)</button>
+            </div>
+            <canvas id="siteStrip" height="70"></canvas>
+            <p class="hint" style="margin-top:4px;">Next 60 days: Gold = sunlit, Blue = Earth in view, Dark = blackout.</p>
+          </div>
+        </div>
+
+        <!-- Collapsible Tool 2: 12-Month Landing Calendar Forecast -->
+        <div class="accordion-section" id="acc-cal">
+          <div class="accordion-header">
+            <span class="accordion-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              12-Month Landing Forecast Matrix
+            </span>
+            <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-content">
+            <div id="cal"></div>
+            <p class="hint" style="margin-top:6px;">
+              <span class="cl c3"></span> Sun + Earth all day &nbsp;
+              <span class="cl c2"></span> Partial &nbsp;
+              <span class="cl c1"></span> Sun, no Earth &nbsp;
+              <span class="cl c0"></span> Dark. Click any day to navigate.
+            </p>
+          </div>
+        </div>
+
+        <!-- Collapsible Tool 3: Lander Battery Survival Simulator -->
+        <div class="accordion-section" id="acc-surv">
+          <div class="accordion-header">
+            <span class="accordion-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="6" width="18" height="12" rx="2"></rect><line x1="23" y1="11" x2="23" y2="13"></line></svg>
+              Power &amp; Battery Survival Check
+            </span>
+            <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-content">
+            <div class="survival-box">
+              <label class="form-row-slider">
+                <span>Solar Array Area</span>
+                <input type="range" id="svPanel" min="1" max="20" step="1" value="4">
+                <b id="svPanelV">4 m²</b>
+              </label>
+              <label class="form-row-slider">
+                <span>Battery Capacity</span>
+                <input type="range" id="svBatt" min="5" max="300" step="5" value="40">
+                <b id="svBattV">40 kWh</b>
+              </label>
+              <label class="form-row-slider">
+                <span>System Power Load</span>
+                <input type="range" id="svLoad" min="100" max="3000" step="50" value="500">
+                <b id="svLoadV">500 W</b>
+              </label>
+              <label class="form-row-slider">
+                <span>Mission Duration</span>
+                <input type="range" id="svDays" min="3" max="60" step="1" value="14">
+                <b id="svDaysV">14 days</b>
+              </label>
+              <div id="svOut"></div>
+              <canvas id="svChart" height="90"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Collapsible Tool 4: Comprehensive Telemetry & Export -->
+        <div class="accordion-section" id="acc-export">
+          <div class="accordion-header">
+            <span class="accordion-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              Telemetry Stats &amp; Mission Export
+            </span>
+            <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-content">
+            <div id="siteStats" class="stats"></div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
+              <button id="briefBtn" class="primary-action" style="width:100%;">
+                Generate Mission Brief (PDF / Print)
+              </button>
+              <button id="csvBtn" style="width:100%;">
+                Download Hourly Ephemeris Telemetry (CSV)
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      <button class="primary" id="wRun">Find best landing windows</button>
-      <div id="wOut"></div>
-    </div>
 
-    <div class="tab" id="tab-compare">
-      <h2>Side-by-side compare</h2>
-      <div class="seg" id="cmpMode"><button data-c="sites" class="on">📍 Compare sites</button><button data-c="dates">📅 Compare dates</button></div>
-      <div id="cmpSites">
-        <p class="meta">Pick 2–4 sites. Statistics over the chosen period.</p>
-        <div id="cmpPick" class="chips"></div>
-        <label class="row">Period <input type="date" id="cFrom" value="2027-01-01"> to <input type="date" id="cTo" value="2027-12-31"></label>
-        <div id="cmpTable"></div>
-        <canvas id="cmpChart" height="220"></canvas>
-        <canvas id="cmpChart2" height="180"></canvas>
+      <!-- =============================================================== -->
+      <!-- DESTINATION 2: PLAN (Tabs: windows & compare)                   -->
+      <!-- =============================================================== -->
+      <div class="tab" id="tab-windows">
+        <div class="plan-deck-view">
+          <!-- Plan Sub-Mode Switcher -->
+          <div class="preset-segmented-control" id="planNavSeg">
+            <button id="planSubFinder" class="on">Window Finder</button>
+            <button id="planSubCompare">Side-by-Side Compare</button>
+          </div>
+
+          <!-- Section: Landing Window Finder -->
+          <div id="plan-finder-container">
+            <h2>Find Optimal Landing Windows</h2>
+            <p class="meta">Search landing dates at six-hour intervals within your selected range. Hourly illumination and Earth visibility determine which windows meet your constraints.</p>
+
+            <div class="seg" id="wPreset" style="margin-bottom:8px;">
+              <button data-p="bal" class="on">Balanced</button>
+              <button data-p="power">Max Power</button>
+              <button data-p="comms">Continuous Comms</button>
+            </div>
+
+            <div class="plan-constraints-form">
+              <div class="form-field-row">
+                <span>Mission Length</span>
+                <div><input type="number" id="wLen" value="14" min="1" max="90" style="width:60px;"> days</div>
+              </div>
+
+              <!-- Collapsible Advanced Constraints -->
+              <details id="advancedConstraints" style="border:none;background:transparent;padding:0;margin-top:4px;">
+                <summary style="font-size:11px;color:var(--sun-gold);cursor:pointer;margin-bottom:6px;">Advanced Mission Limits</summary>
+                <div style="display:flex;flex-direction:column;gap:6px;padding-top:4px;">
+                  <div class="form-field-row">
+                    <span>Min Sunlight</span>
+                    <div><input type="number" id="wSun" value="60" min="0" max="100"> %</div>
+                  </div>
+                  <div class="form-field-row">
+                    <span>Min Earth Visibility</span>
+                    <div><input type="number" id="wEarth" value="50" min="0" max="100"> %</div>
+                  </div>
+                  <div class="form-field-row">
+                    <span>Max Continuous Darkness</span>
+                    <div><input type="number" id="wDark" value="72" min="0" max="2000"> h</div>
+                  </div>
+                  <div class="form-field-row">
+                    <span>Max Comms Blackout</span>
+                    <div><input type="number" id="wBlack" value="96" min="0" max="2000"> h</div>
+                  </div>
+                  <div class="form-field-row">
+                    <span>Search Range</span>
+                    <div style="display:flex;gap:4px;">
+                      <input type="date" id="wFrom" value="2027-01-01" style="width:110px;">
+                      <input type="date" id="wTo" value="2028-12-31" style="width:110px;">
+                    </div>
+                  </div>
+                  <div class="form-field-row">
+                    <span>Target Sites</span>
+                    <select id="wSites">
+                      <option value="all">All Sites</option>
+                      <option value="artemis">Artemis III Regions Only</option>
+                      <option value="sel">Selected Site Only</option>
+                    </select>
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            <button class="primary-action" id="wRun" style="width:100%;margin-top:4px;">
+              Compute Optimal Windows
+            </button>
+
+            <!-- Results Output -->
+            <div id="wOut" style="margin-top:12px;"></div>
+          </div>
+        </div>
       </div>
-      <div id="cmpDates" hidden>
-        <p class="meta">Same site, different landing dates. Which date gives the most power and the best contact with Earth?</p>
-        <label class="row">Site <select id="dSite"></select></label>
-        <label class="row">Mission length <input type="number" id="dLen" value="14" min="1" max="90" style="width:70px"> days</label>
-        <div class="row" id="dDates"><input type="date" value="2027-01-10"><input type="date" value="2027-04-10"><input type="date" value="2027-07-10"><input type="date" value="2027-10-10"></div>
-        <div id="dTable"></div>
-        <canvas id="dChart" height="200"></canvas>
+
+      <!-- Plan Sub-Tab: Side-by-Side Compare -->
+      <div class="tab" id="tab-compare">
+        <button id="compareBack">Back to window finder</button>
+        <h2>Side-by-Side Site &amp; Date Comparison</h2>
+        <div class="seg" id="cmpMode" style="margin:8px 0;">
+          <button data-c="sites" class="on">Compare Sites</button>
+          <button data-c="dates">Compare Dates</button>
+        </div>
+
+        <div id="cmpSites">
+          <p class="meta">Select 2 to 4 candidate locations to compare illumination and comms statistics.</p>
+          <div id="cmpPick" class="chips" style="margin:8px 0;"></div>
+          <div class="form-field-row" style="margin:8px 0;">
+            <span>Evaluation Period</span>
+            <div style="display:flex;gap:4px;">
+              <input type="date" id="cFrom" value="2027-01-01" style="width:110px;">
+              <input type="date" id="cTo" value="2027-12-31" style="width:110px;">
+            </div>
+          </div>
+          <div id="cmpTable" class="data-table-wrapper" style="margin:10px 0;"></div>
+          <canvas id="cmpChart" height="200"></canvas>
+          <canvas id="cmpChart2" height="160" style="margin-top:10px;"></canvas>
+        </div>
+
+        <div id="cmpDates" hidden>
+          <p class="meta">Evaluate multiple landing dates at the same site to determine the highest solar energy and longest communication windows.</p>
+          <div class="form-field-row" style="margin:6px 0;">
+            <span>Target Site</span>
+            <select id="dSite"></select>
+          </div>
+          <div class="form-field-row" style="margin:6px 0;">
+            <span>Mission Length</span>
+            <div><input type="number" id="dLen" value="14" min="1" max="90" style="width:60px;"> days</div>
+          </div>
+          <div class="row" id="dDates" style="margin:8px 0;">
+            <input type="date" value="2027-01-10">
+            <input type="date" value="2027-04-10">
+            <input type="date" value="2027-07-10">
+            <input type="date" value="2027-10-10">
+          </div>
+          <div id="dTable" class="data-table-wrapper" style="margin:10px 0;"></div>
+          <canvas id="dChart" height="180"></canvas>
+        </div>
       </div>
-    </div>
 
-    <div class="tab" id="tab-heat">
-      <h2>Heatmap mode</h2>
-      <p class="meta">Colors the whole region by illumination or Earth visibility for any date range, computed live from terrain horizons.</p>
-      <div class="chips" id="hPresets"><button data-p="sun27">☀️ Sunlight in 2027</button><button data-p="ice">❄️ Where ice can hide</button><button data-p="comms">📡 Talk-to-Earth map</button><button data-p="land">🏆 Best landing spots</button></div>
-      <p class="hint">Or choose your own:</p>
-      <label class="row">Metric <select id="hMetric"><option value="sun">Sunlight %</option><option value="earth">Earth visibility (DTE comms) %</option><option value="both">Sun AND Earth %</option><option value="slope">⛰️ Flat ground (landing safety)</option><option value="land">🏆 Best landing spots (sun + Earth + flat)</option></select></label>
-      <label class="row">From <input type="date" id="hFrom" value="2027-01-01"> to <input type="date" id="hTo" value="2027-12-31"></label>
-      <button class="primary" id="hRun">Compute heatmap</button>
-      <div id="hOut" class="meta"></div>
-    </div>
+      <!-- =============================================================== -->
+      <!-- DESTINATION 3: SCIENCE & VALIDATION (Tabs: valid & about)       -->
+      <!-- =============================================================== -->
+      <div class="tab" id="tab-valid">
+        <div class="science-dossier">
+          <div class="preset-segmented-control" id="scienceNavSeg">
+            <button id="sciSubValid" class="on">NASA Validation</button>
+            <button id="sciSubAbout">Methodology &amp; Pipeline</button>
+          </div>
 
-    <div class="tab" id="tab-valid">
-      <h2>Checked against NASA</h2>
-      <div id="validOut"></div>
-    </div>
+          <!-- Section: NASA Validation -->
+          <div id="sci-valid-container">
+            <h2>NASA Ground-Truth Validation</h2>
+            <div id="validOut"></div>
+          </div>
+        </div>
+      </div>
 
-    <div class="tab" id="tab-about">
-      <h2>About Polaris Window</h2>
-      <div id="aboutOut"></div>
+      <div class="tab" id="tab-about">
+        <div class="science-dossier">
+          <div class="preset-segmented-control" id="scienceNavSeg2">
+            <button id="sciSubValid2">NASA Validation</button>
+            <button id="sciSubAbout2" class="on">Methodology &amp; Pipeline</button>
+          </div>
+
+          <!-- Section: Methodology & About -->
+          <div id="sci-about-container">
+            <h2>Scientific Methodology &amp; Architecture</h2>
+            <div id="aboutOut"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Heatmap Tab (Contextual Layer Drawer) -->
+      <div class="tab" id="tab-heat">
+        <h2>Regional Heatmap Synthesis</h2>
+        <p class="meta">Computed directly in the browser from 131k terrain horizons across the lunar south pole.</p>
+        <div class="chips" id="hPresets">
+          <button data-p="sun27">Sunlight in 2027</button>
+          <button data-p="ice">Cold Traps / Water Ice</button>
+          <button data-p="comms">Direct Earth Comms</button>
+          <button data-p="land">Best Landing Spots</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+          <div class="form-field-row">
+            <span>Metric</span>
+            <select id="hMetric">
+              <option value="sun">Sunlight %</option>
+              <option value="earth">Earth Visibility (DTE Comms) %</option>
+              <option value="both">Sun AND Earth %</option>
+              <option value="slope">Flat Ground (&lt;8° Slope)</option>
+              <option value="land">Optimal (Sun + Earth + Flat)</option>
+            </select>
+          </div>
+          <div class="form-field-row">
+            <span>Evaluation Range</span>
+            <div style="display:flex;gap:4px;">
+              <input type="date" id="hFrom" value="2027-01-01" style="width:110px;">
+              <input type="date" id="hTo" value="2027-12-31" style="width:110px;">
+            </div>
+          </div>
+          <button class="primary-action" id="hRun">Compute Heatmap</button>
+        </div>
+        <div id="hOut" class="meta" style="margin-top:10px;"></div>
+      </div>
+
     </div>
   </aside>
+
+  <!-- Bottom Command Deck: Aerospace Timeline -->
+  <footer id="timeline-dock" role="toolbar" aria-label="Timeline Transport Controls">
+    <div class="timeline-transport-controls">
+      <button id="tBack" class="step-btn" title="Step backward 1 day (Shift+Left)">-1d</button>
+      <button id="play" class="transport-btn primary" title="Play / Pause Timeline (Space)" aria-label="Play or pause">▶</button>
+      <button id="tFwd" class="step-btn" title="Step forward 1 day (Shift+Right)">+1d</button>
+      <select id="speed" class="step-btn" title="Simulation Speed">
+        <option value="1">1 h/f</option>
+        <option value="4" selected>4 h/f</option>
+        <option value="12">12 h/f</option>
+      </select>
+    </div>
+
+    <div class="timeline-slider-track">
+      <input type="range" id="time" min="0" max="1" value="0" aria-label="Scrub Timeline Date and Time">
+    </div>
+
+    <div class="timeline-clock-readout">
+      <input type="datetime-local" id="timeInput" step="3600" aria-label="Exact UTC Timestamp">
+    </div>
+  </footer>
+
+  <!-- Floating Guided Tour Box -->
+  <div id="tourBox" hidden>
+    <p id="tourText"></p>
+    <div>
+      <span id="tourStep"></span>
+      <button id="tourSpeak" class="nav-pill-btn" title="Read step aloud" aria-pressed="false">Read Aloud</button>
+      <button id="tourPrev" class="step-btn">‹</button>
+      <button id="tourNext" class="primary-action" style="padding:4px 10px;">Next ›</button>
+      <button id="tourEnd" class="step-btn" title="Exit Tour">✕</button>
+    </div>
+  </div>
+
+  <div id="tlHint" hidden>Drag the timeline or press ▶ to watch shadows sweep across crater rims.</div>
 </main>
-<div id="labels"></div>
+
+<!-- Settings Modal Drawer -->
+<div id="settingsModal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h2>Telemetry &amp; Display Settings</h2>
+      <button id="settingsClose" class="panel-icon-btn">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="form-field-row">
+        <span>Terrain Vertical Exaggeration</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input type="range" id="exag" min="1" max="6" step="0.5" value="3" style="width:100px;">
+          <span id="exagV" class="mono">3</span>x
+        </div>
+      </div>
+      <div class="form-field-row">
+        <span>Antenna Elevation Mask</span>
+        <select id="emask">
+          <option value="0">0° (Line of Sight)</option>
+          <option value="1">1° above terrain</option>
+          <option value="2">2° above terrain</option>
+          <option value="5">5° above terrain</option>
+        </select>
+      </div>
+      <div class="form-field-row">
+        <span>Display Mode</span>
+        <div class="seg" id="modeSeg">
+          <button data-m="explore" class="on">Standard</button>
+          <button data-m="planner">Advanced</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Share Modal -->
+<div id="shareBox" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h2>Share Mission View</h2>
+      <button id="shareClose" class="panel-icon-btn">✕</button>
+    </div>
+    <p class="meta">Anyone opening this link sees the identical site, timeline date, and active analysis tools.</p>
+    <div style="display:flex;gap:6px;margin:12px 0;">
+      <input id="shareUrl" readonly style="flex:1;">
+      <button id="shareCopy" class="primary-action">Copy</button>
+    </div>
+    <div id="shareQr" style="display:flex;justify-content:center;margin:14px 0;"></div>
+  </div>
+</div>
+
+<!-- Alert Toast Notification -->
 <div id="toast" hidden></div>
-<div id="shareBox" hidden><div class="wcard">
-  <h2>🔗 Share this exact view</h2>
-  <p class="meta">Anyone who opens this link sees the same site, date and tab. Teachers: put the QR code on the projector and students can scan it.</p>
-  <div class="row"><input id="shareUrl" readonly style="flex:1"><button id="shareCopy">Copy</button></div>
-  <div id="shareQr"></div>
-  <div class="row" style="justify-content:flex-end"><button id="shareClose">Close</button></div>
-</div></div>
+
+<!-- 30-Second Demo Narration Overlay -->
 <div id="caption" hidden></div>
-<div id="loading"><div class="spin"></div><p id="loadMsg">Loading real NASA Moon terrain…</p><div class="pbar"><div id="pfill"></div></div></div>
-<div id="welcome" hidden><div class="wcard">
-  <h1>🌙 Where and when should astronauts land?</h1>
-  <p>The Moon's south pole has <b>frozen water</b>, but the Sun only peeks over the horizon there, and tall mountains can hide the <b>Sun</b> (no solar power) or the <b>Earth</b> (no radio home).</p>
-  <p>Polaris Window uses real NASA maps of the Moon to find the best <b>place</b> and <b>date</b> to land. It works like a weather forecast for the Moon.</p>
-  <div class="wbtns"><button data-w="tour" class="primary">▶ Take the 1-minute tour</button><button data-w="explore">🧍 Explore a landing site</button><button data-w="date">📅 Find the best landing date</button><button data-w="game">🔋 Play: keep a lander alive</button></div>
-  <p class="hint">Built with NASA LRO LOLA terrain, NASA/JPL SPICE ephemeris and JPL Horizons, and checked against NASA's published sunlight maps.</p>
-</div></div>
+
+<!-- Real NASA LOLA Terrain Loading Screen -->
+<div id="loading">
+  <div class="spin"></div>
+  <p id="loadMsg" style="margin-top:14px;color:var(--text-secondary);font-size:12px;">Loading NASA Moon terrain…</p>
+  <div class="pbar"><div id="pfill"></div></div>
+</div>
+
+<!-- Kept for backward compatibility, hidden by default -->
+<div id="welcome" hidden></div>
+
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

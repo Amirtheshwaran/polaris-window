@@ -105,26 +105,18 @@ void main() {
   bool inCore = abs(vM.x) < coreHalf * 0.995 && abs(vM.y) < coreHalf * 0.995;
   if (isCore == 0 && inCore) discard;
 
+  float rho = length(vM);
+
+  // Outer boundary clipping at 190 km
+  if (isCore == 0 && rho > 190000.0) discard;
+
   float distToCam = length(vViewDir);
 
-  // At orbital distances (distToCam >= 550 km), meshGlobe provides the complete, unbroken lunar sphere.
-  // Both regional (meshR) and core (meshC) terrain meshes hand over cleanly without artifacts.
-  if (distToCam > 550.0) discard;
-
-  // Exact circular boundary clipping for regional DEM at 185 km
-  if (isCore == 0) {
-    float rho = length(vM);
-    if (rho > 185000.0) discard;
-  }
-
-  // Distance-based LOD blend factor: 0.0 at close range (dist <= 140 km), 1.0 at orbital range (dist >= 480 km)
-  float distLod = smoothstep(140.0, 480.0, distToCam);
-
-  // Radial blend factor: 0.0 inside analyzed science sites, 1.0 at outer perimeter (140 km -> 185 km)
-  float rho = length(vM);
-  float radBlend = isCore == 1 ? 0.0 : smoothstep(140000.0, 185000.0, rho);
-
-  // Seamless transition blend factor
+  // Smooth distance & radial handoff parameters
+  // Close range (dist <= 120 km): 100% local LOLA topography and horizon raytracing
+  // Outer perimeter (rho >= 185 km) or orbital range (dist >= 440 km): exact spherical globe match
+  float distLod = smoothstep(120.0, 440.0, distToCam);
+  float radBlend = isCore == 1 ? 0.0 : smoothstep(135000.0, 185000.0, rho);
   float blendT = max(distLod, radBlend);
 
   float hh = isCore == 1 ? coreHalf : regHalf;
@@ -185,14 +177,14 @@ void main() {
     float v = theta / 3.14159265359;
     vec3 lrocSample = texture2D(globeMap, vec2(u, v)).rgb;
     float lum = dot(lrocSample, vec3(0.299, 0.587, 0.114));
-    float lrocAlbedo = clamp(lum * 1.15, 0.25, 0.95);
+    float lrocAlbedo = clamp(lum * 1.10, 0.08, 0.92);
 
     // Combine NASA LROC macro reflectance with LOLA micro-relief & mass-wasting
     // Seamlessly transitions into pure LROC matching the globe at outer perimeter or orbital zoom
     float microMod = mix(lolaAlbedo / 0.52, 1.0, blendT);
-    regolithBase = vec3(0.72, 0.70, 0.67) * clamp(lrocAlbedo * microMod, 0.20, 1.05);
+    regolithBase = vec3(0.58, 0.56, 0.53) * clamp(lrocAlbedo * microMod, 0.08, 1.0);
   } else {
-    regolithBase = vec3(0.72, 0.70, 0.67) * lolaAlbedo;
+    regolithBase = vec3(0.58, 0.56, 0.53) * lolaAlbedo;
   }
 
   // Real Earthshine from JPL SPICE ephemerides + cosmic starlight
@@ -201,7 +193,7 @@ void main() {
   vec3 starlight = vec3(0.003, 0.0035, 0.004);
 
   // Direct solar radiance
-  vec3 directSun = vec3(1.35, 1.33, 1.28) * scattering * opposition * totalShadow;
+  vec3 directSun = vec3(1.25, 1.23, 1.19) * scattering * opposition * totalShadow;
 
   vec3 finalColor;
   if (mode == 0) {
@@ -220,7 +212,15 @@ void main() {
     finalColor = heatFinal;
   }
 
-  gl_FragColor = vec4(finalColor, 1.0);
+  // Seamless radial and distance-based opacity dissolution
+  // Inside candidate science sites (rho <= 175 km, dist <= 340 km), terrain is 100% solid & opaque.
+  // Over rho in [175 km, 189 km] and dist in [340 km, 440 km], terrain smoothly dissolves into meshGlobe.
+  float distAlpha = 1.0 - smoothstep(340.0, 440.0, distToCam);
+  float radAlpha = isCore == 1 ? 1.0 : (1.0 - smoothstep(175000.0, 189000.0, rho));
+  float edgeAlpha = distAlpha * radAlpha;
+  if (edgeAlpha <= 0.002) discard;
+
+  gl_FragColor = vec4(finalColor, edgeAlpha);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }
@@ -256,12 +256,13 @@ varying vec3 vViewDir;
 varying vec2 vUv;
 
 void main() {
-  // At close/medium range (camDist < 480 km), discard polar cap where high-resolution LOLA 3D
-  // terrain meshes (meshR/meshC) render, preventing the smooth sphere from clipping deep craters.
-  // At orbital distances (camDist >= 500 km), the sphere is 100% complete, solid, and unbroken.
+  // Discard south-pole cap at close/medium range (distToCam < 380 km) where high-resolution LOLA 3D
+  // candidate landing sites render (rho < 185 km, cosTheta > 0.9943), preventing the smooth sphere
+  // from clipping crater floors.
+  // At orbital distances (distToCam >= 380 km), the sphere is 100% complete, unbroken, and solid.
   float distToCam = length(vViewDir);
   float cosTheta = (vWorldPos.y + 1737.4) / 1737.4;
-  if (cosTheta > 0.9955 && distToCam < 480.0) discard;
+  if (cosTheta > 0.9943 && distToCam < 380.0) discard;
 
   vec3 N = normalize(vN);
   vec3 V = normalize(vViewDir);
@@ -292,12 +293,13 @@ void main() {
   if (hasGlobeMap == 1) {
     vec3 lrocSample = texture2D(globeMap, vUv).rgb;
     float lum = dot(lrocSample, vec3(0.299, 0.587, 0.114));
-    baseAlbedo = vec3(0.72, 0.70, 0.67) * clamp(lum * 1.15, 0.25, 0.95);
+    float lrocAlbedo = clamp(lum * 1.10, 0.08, 0.92);
+    baseAlbedo = vec3(0.58, 0.56, 0.53) * lrocAlbedo;
   } else {
-    baseAlbedo = vec3(0.72, 0.70, 0.67) * 0.54;
+    baseAlbedo = vec3(0.58, 0.56, 0.53) * 0.52;
   }
 
-  vec3 directSun = vec3(1.35, 1.33, 1.28) * scattering * opposition * sunTerm;
+  vec3 directSun = vec3(1.25, 1.23, 1.19) * scattering * opposition * sunTerm;
 
   vec3 col;
   if (mode == 0) {
@@ -404,11 +406,11 @@ function buildMesh(heights, half, n, isCore) {
     uniforms: { ...U, isCore: { value: isCore } },
     vertexShader: vs,
     fragmentShader: fs,
-    transparent: false,
+    transparent: true,
     depthWrite: true,
-    polygonOffset: isCore === 0,
-    polygonOffsetFactor: -1.0,
-    polygonOffsetUnits: -1.0
+    polygonOffset: true,
+    polygonOffsetFactor: isCore === 1 ? -2.0 : -1.0,
+    polygonOffsetUnits: isCore === 1 ? -2.0 : -1.0
   }));
 
   for (const k in U) m.material.uniforms[k] = U[k];
@@ -509,10 +511,10 @@ function applyHeights(m) {
     let h = heights[k];
     const rho = Math.hypot(x, y);
 
-    // Smooth edge taper from 140 km to 185 km to blend seamlessly into lunar globe datum
+    // Smooth edge taper from 135 km to 190 km to blend seamlessly into lunar globe datum
     // Preserves 100% of authentic NASA LOLA terrain elevations across all candidate regions
-    if (!isCore && rho > 140000.0) {
-      const t = Math.max(0, Math.min(1, (rho - 140000.0) / (185000.0 - 140000.0)));
+    if (!isCore && rho > 135000.0) {
+      const t = Math.max(0, Math.min(1, (rho - 135000.0) / (190000.0 - 135000.0)));
       const smooth = 1.0 - t * t * (3.0 - 2.0 * t);
       h *= smooth;
     }
@@ -687,7 +689,7 @@ export function initScene(el, pick) {
       const x = hit.point.x * 1000;
       const y = -hit.point.z * 1000;
       // Reject points outside analyzed LOLA terrain region
-      if (Math.abs(x) > 190000 || Math.abs(y) > 190000 || Math.hypot(x, y) > 185000) return;
+      if (Math.abs(x) > 190000 || Math.abs(y) > 190000 || Math.hypot(x, y) > 188000) return;
       if (!(hit.object === meshR && Math.abs(x) < 39800 && Math.abs(y) < 39800)) {
         onPick && onPick(x, y);
       }

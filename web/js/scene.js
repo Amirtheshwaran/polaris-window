@@ -21,6 +21,8 @@ const U = {
   ramp: { value: null },
   normR: { value: null },
   normC: { value: null },
+  globeMap: { value: null },
+  hasGlobeMap: { value: 0 },
   mode: { value: 0 },
   quality: { value: 2 },
   exag: { value: 3.0 },
@@ -101,13 +103,12 @@ void main() {
   bool inCore = abs(vM.x) < coreHalf * 0.995 && abs(vM.y) < coreHalf * 0.995;
   if (isCore == 0 && inCore) discard;
 
-  // Smooth squircle aperture cutoff: discard rectangular corners of regional DEM beyond 191.8 km
+  // Smooth radial alpha blend: seamlessly transition regional DEM into the global Moon sphere
+  float edgeAlpha = 1.0;
   if (isCore == 0) {
-    float qx = abs(vM.x) / 191800.0;
-    float qy = abs(vM.y) / 191800.0;
-    float qx4 = qx * qx * qx * qx;
-    float qy4 = qy * qy * qy * qy;
-    if (qx4 * qx4 + qy4 * qy4 > 1.0) discard;
+    float rho = length(vM);
+    edgeAlpha = 1.0 - smoothstep(155000.0, 190000.0, rho);
+    if (edgeAlpha <= 0.001) discard;
   }
 
   float hh = isCore == 1 ? coreHalf : regHalf;
@@ -180,23 +181,22 @@ void main() {
     finalColor = rampCol * hill;
   }
 
-  gl_FragColor = vec4(finalColor, 1.0);
+  gl_FragColor = vec4(finalColor, edgeAlpha);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }
 `;
 
-// Outer Lunar Globe Shaders (curved lunar body extension matching Lommel-Seeliger scattering)
+// Full Lunar Globe Shaders (R = 1,737.4 km, wrapped with NASA LROC WAC reflectance)
 const vsGlobe = `
-attribute float aDist;
 varying vec3 vN;
 varying vec3 vWorldPos;
 varying vec3 vViewDir;
-varying float vDist;
+varying vec2 vUv;
 
 void main() {
   vN = normalize(normal);
-  vDist = aDist;
+  vUv = uv;
   vec4 worldPos = modelMatrix * vec4(position, 1.0);
   vWorldPos = worldPos.xyz;
   vViewDir = cameraPosition - worldPos.xyz;
@@ -205,6 +205,8 @@ void main() {
 `;
 
 const fsGlobe = `
+uniform sampler2D globeMap;
+uniform int hasGlobeMap;
 uniform vec3 sunDir;
 uniform vec3 earthDir;
 uniform int mode;
@@ -212,7 +214,7 @@ uniform int quality;
 varying vec3 vN;
 varying vec3 vWorldPos;
 varying vec3 vViewDir;
-varying float vDist;
+varying vec2 vUv;
 
 void main() {
   vec3 N = normalize(vN);
@@ -225,31 +227,43 @@ void main() {
   float phaseCos = clamp(dot(L, V), -1.0, 1.0);
   float phaseAngle = acos(phaseCos);
 
+  // Lommel-Seeliger scattering matching regional DEM
   float ls = mu0 / (mu0 + mu);
   float scattering = 2.0 * (0.85 * ls + 0.15 * mu0);
+
+  // Lunar opposition surge (Heiligenschein)
   float opposition = 1.0 + 0.65 / (1.0 + tan(phaseAngle * 0.5) / 0.08);
   if (quality == 0) opposition = 1.0;
 
-  float sunTerm = smoothstep(-0.02, 0.04, dot(N, L));
+  // Real planetary terminator shadow with smooth physical penumbra
+  float sunTerm = smoothstep(-0.015, 0.035, dot(N, L));
   float earthDot = max(dot(N, E), 0.0);
   vec3 earthshineCol = vec3(0.04, 0.055, 0.08) * earthDot;
   vec3 starlight = vec3(0.003, 0.0035, 0.004);
 
-  vec3 regolithBase = vec3(0.72, 0.70, 0.67) * 0.54;
+  // Authentic NASA LROC global lunar surface reflectance
+  vec3 baseAlbedo;
+  if (hasGlobeMap == 1) {
+    vec3 lrocSample = texture2D(globeMap, vUv).rgb;
+    float lum = dot(lrocSample, vec3(0.299, 0.587, 0.114));
+    baseAlbedo = vec3(0.72, 0.70, 0.67) * clamp(lum * 1.15, 0.25, 0.95);
+  } else {
+    baseAlbedo = vec3(0.72, 0.70, 0.67) * 0.54;
+  }
+
   vec3 directSun = vec3(1.35, 1.33, 1.28) * scattering * opposition * sunTerm;
 
   vec3 col;
   if (mode == 0) {
-    col = regolithBase * (directSun + earthshineCol + starlight);
+    col = baseAlbedo * (directSun + earthshineCol + starlight);
   } else {
+    // Heatmap mode: dark Moon context with hillshading
     vec3 hillLight = normalize(vec3(-0.4, 0.8, 0.3));
     float hill = 0.45 + 0.55 * max(dot(N, hillLight), 0.0);
-    col = vec3(0.14, 0.15, 0.17) * hill;
+    col = vec3(0.12, 0.13, 0.15) * hill;
   }
 
-  // Soft atmospheric-free outer limb fade into space
-  float fade = smoothstep(750.0, 620.0, vDist);
-  gl_FragColor = vec4(col, fade);
+  gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }
@@ -343,7 +357,9 @@ function buildMesh(heights, half, n, isCore) {
   const m = new THREE.Mesh(g, new THREE.ShaderMaterial({
     uniforms: { ...U, isCore: { value: isCore } },
     vertexShader: vs,
-    fragmentShader: fs
+    fragmentShader: fs,
+    transparent: isCore === 0,
+    depthWrite: true
   }));
 
   for (const k in U) m.material.uniforms[k] = U[k];
@@ -351,52 +367,60 @@ function buildMesh(heights, half, n, isCore) {
   return m;
 }
 
-// Build lower-detail curved lunar backdrop extending to 750 km radius (mean spherical lunar datum)
+// Build full spherical lunar globe (R = 1,737.4 km) centered at (0, -R, 0)
+// Extends across the entire Moon (360° longitude, 180° latitude)
 function buildGlobe() {
-  const nr = 40; // radial rings
-  const na = 96; // angular segments
-  const rMin = 140.0; // km (overlaps beneath regional DEM boundary)
-  const rMax = 750.0; // km (curves downward to form lunar limb)
+  const nTheta = 120; // latitude rings from South Pole (0) to North Pole (PI)
+  const nPhi = 180;   // longitude segments around 360°
 
-  const numVerts = (nr + 1) * (na + 1);
+  const numVerts = (nTheta + 1) * (nPhi + 1);
   const pos = new Float32Array(numVerts * 3);
   const norm = new Float32Array(numVerts * 3);
-  const dist = new Float32Array(numVerts);
+  const uvs = new Float32Array(numVerts * 2);
   const idx = [];
 
-  for (let i = 0; i <= nr; i++) {
-    const t = i / nr;
-    const rKm = rMin + (rMax - rMin) * Math.pow(t, 1.25);
-    const rM = rKm * 1000.0;
-    // Physical lunar surface curvature (quad-parabolic Taylor expansion of sphere radius R)
-    const yKm = -(rM * rM) / (2.0 * R) / 1000.0;
+  for (let i = 0; i <= nTheta; i++) {
+    const theta = (i / nTheta) * Math.PI; // 0 at South Pole, PI at North Pole
+    const sinT = Math.sin(theta);
+    const cosT = Math.cos(theta);
+    const v = theta / Math.PI;
 
-    for (let j = 0; j <= na; j++) {
-      const phi = (j / na) * Math.PI * 2.0;
-      const xKm = rKm * Math.sin(phi);
-      const zKm = -rKm * Math.cos(phi);
+    for (let j = 0; j <= nPhi; j++) {
+      const phi = (j / nPhi) * Math.PI * 2.0; // 0 to 2*PI Eastward from Prime Meridian
+      const sinP = Math.sin(phi);
+      const cosP = Math.cos(phi);
 
-      const vIdx = i * (na + 1) + j;
-      pos[vIdx * 3] = xKm;
-      pos[vIdx * 3 + 1] = yKm;
-      pos[vIdx * 3 + 2] = zKm;
+      // Coordinates in scene space:
+      // South Pole apex is at (0, 0, 0)
+      // Sphere center is at (0, -R_KM, 0)
+      const x = R_KM * sinT * sinP;
+      const y = -R_KM + R_KM * cosT;
+      const z = -R_KM * sinT * cosP;
 
-      // Surface normal pointing outward from spherical lunar center
-      const nVec = new THREE.Vector3(xKm / R_KM, 1.0, zKm / R_KM).normalize();
-      norm[vIdx * 3] = nVec.x;
-      norm[vIdx * 3 + 1] = nVec.y;
-      norm[vIdx * 3 + 2] = nVec.z;
+      const vIdx = i * (nPhi + 1) + j;
+      pos[vIdx * 3] = x;
+      pos[vIdx * 3 + 1] = y;
+      pos[vIdx * 3 + 2] = z;
 
-      dist[vIdx] = rKm;
+      // Surface normal pointing outward from sphere center (0, -R_KM, 0)
+      norm[vIdx * 3] = sinT * sinP;
+      norm[vIdx * 3 + 1] = cosT;
+      norm[vIdx * 3 + 2] = -sinT * cosP;
+
+      // NASA SVS CGI Moon Kit map is centered on 0° longitude (Prime Meridian at U=0.5)
+      let u = (j / nPhi) + 0.5;
+      if (u >= 1.0) u -= 1.0;
+      uvs[vIdx * 2] = u;
+      uvs[vIdx * 2 + 1] = v;
     }
   }
 
-  for (let i = 0; i < nr; i++) {
-    for (let j = 0; j < na; j++) {
-      const row1 = i * (na + 1);
-      const row2 = (i + 1) * (na + 1);
-      idx.push(row1 + j, row2 + j, row1 + j + 1);
-      idx.push(row1 + j + 1, row2 + j, row2 + j + 1);
+  for (let i = 0; i < nTheta; i++) {
+    for (let j = 0; j < nPhi; j++) {
+      const a = i * (nPhi + 1) + j;
+      const b = (i + 1) * (nPhi + 1) + j;
+      idx.push(a, b, a + 1);
+      idx.push(a + 1, b, b + 1);
     }
   }
 
@@ -404,10 +428,12 @@ function buildGlobe() {
   g.setIndex(idx);
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('normal', new THREE.BufferAttribute(norm, 3));
-  g.setAttribute('aDist', new THREE.BufferAttribute(dist, 1));
+  g.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
 
   const mat = new THREE.ShaderMaterial({
     uniforms: {
+      globeMap: U.globeMap,
+      hasGlobeMap: U.hasGlobeMap,
       sunDir: U.sunDir,
       earthDir: U.earthDir,
       mode: U.mode,
@@ -415,7 +441,6 @@ function buildGlobe() {
     },
     vertexShader: vsGlobe,
     fragmentShader: fsGlobe,
-    transparent: true,
     depthWrite: true
   });
 
@@ -433,23 +458,19 @@ function applyHeights(m) {
     const x = mxy[k * 2];
     const y = mxy[k * 2 + 1];
     let h = heights[k];
+    const rho = Math.hypot(x, y);
 
-    // Smooth edge taper only at the absolute squircle boundary (> 0.96) to blend into lunar globe
+    // Smooth edge taper from 155 km to 190 km to blend seamlessly into lunar globe datum
     // Preserves 100% of authentic NASA LOLA terrain elevations across all candidate regions
-    if (!isCore) {
-      const qx = Math.abs(x) / 191800.0;
-      const qy = Math.abs(y) / 191800.0;
-      const qx4 = qx * qx * qx * qx;
-      const qy4 = qy * qy * qy * qy;
-      const sq = qx4 * qx4 + qy4 * qy4;
-      if (sq > 0.96) {
-        const t = Math.max(0, Math.min(1, (1.0 - sq) / (1.0 - 0.96)));
-        const smooth = t * t * (3 - 2 * t);
-        h *= smooth;
-      }
+    if (!isCore && rho > 155000.0) {
+      const t = Math.max(0, Math.min(1, (rho - 155000.0) / (190000.0 - 155000.0)));
+      const smooth = 1.0 - t * t * (3.0 - 2.0 * t);
+      h *= smooth;
     }
 
-    p[k * 3 + 1] = (h * exag - (x * x + y * y) / (2 * R)) / 1000;
+    // Exact spherical lunar surface datum: -R + sqrt(R^2 - rho^2)
+    const sphereY = -R + Math.sqrt(Math.max(0, R * R - (x * x + y * y)));
+    p[k * 3 + 1] = (h * exag + sphereY) / 1000;
   }
 
   m.geometry.attributes.position.needsUpdate = true;
@@ -457,7 +478,10 @@ function applyHeights(m) {
   m.geometry.computeBoundingSphere();
 }
 
-export const sceneY = (x, y, h) => (h * exag - (x * x + y * y) / (2 * R)) / 1000;
+export const sceneY = (x, y, h) => {
+  const sphereY = -R + Math.sqrt(Math.max(0, R * R - (x * x + y * y)));
+  return (h * exag + sphereY) / 1000;
+};
 
 function glow(color, size) {
   const c = document.createElement('canvas');
@@ -502,17 +526,17 @@ export function initScene(el, pick) {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0a0b0d);
 
-  camera = new THREE.PerspectiveCamera(45, 1, 0.05, 5000);
+  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 40000);
   camera.position.set(50, 160, 210);
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
   controls.rotateSpeed = 0.75;
-  controls.zoomSpeed = 1.0;
-  controls.minDistance = 6.0;
-  controls.maxDistance = 420.0;
-  controls.maxPolarAngle = Math.PI * 0.48; // ~86.4°, keeps camera above lunar horizon
+  controls.zoomSpeed = 1.1;
+  controls.minDistance = 4.0;
+  controls.maxDistance = 3800.0;
+  controls.maxPolarAngle = Math.PI * 0.48; // Smoothly increases at orbital distances
 
   U.illumR.value = tex(D.grids.regional.n);
   U.illumC.value = tex(D.grids.core.n);
@@ -521,6 +545,29 @@ export function initScene(el, pick) {
   U.ramp.value = rampTexture(RAMP);
   U.normR.value = buildTerrainNormals(D.terrain, D.meta.terrain.half, D.meta.terrain.n);
   U.normC.value = buildTerrainNormals(D.terrainCore, D.meta.terrain_core.half, D.meta.terrain_core.n);
+
+  // Default neutral regolith gray texture for frame 0
+  const defaultGlobeTex = new THREE.DataTexture(new Uint8Array([138, 134, 128, 255]), 1, 1, THREE.RGBAFormat);
+  defaultGlobeTex.needsUpdate = true;
+  U.globeMap.value = defaultGlobeTex;
+
+  // Load official NASA LROC global lunar surface reflectance
+  new THREE.TextureLoader().load(
+    'data/moon_globe.jpg',
+    tex => {
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      tex.magFilter = THREE.LinearFilter;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      U.globeMap.value = tex;
+      U.hasGlobeMap.value = 1;
+    },
+    undefined,
+    err => {
+      console.warn('Moon globe texture fallback active:', err);
+    }
+  );
 
   bufR = new Uint8Array(D.grids.regional.n ** 2);
   bufC = new Uint8Array(D.grids.core.n ** 2);
@@ -534,18 +581,18 @@ export function initScene(el, pick) {
 
   scene.add(meshGlobe, meshR, meshC, markers, regionGrp, rays);
 
-  // Starfield backdrop
-  const sp = new Float32Array(3000 * 3);
+  // Deep space celestial starfield backdrop (radius 18,000 km)
+  const sp = new Float32Array(3500 * 3);
   for (let i = 0; i < sp.length; i += 3) {
-    const v = new THREE.Vector3().randomDirection().multiplyScalar(3000);
+    const v = new THREE.Vector3().randomDirection().multiplyScalar(18000);
     sp.set([v.x, v.y, v.z], i);
   }
   const sg = new THREE.BufferGeometry();
   sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
   scene.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0x8a92a2, size: 1.1, sizeAttenuation: false })));
 
-  sunSpr = glow('#ffd36b', 140);
-  earthSpr = glow('#5fa8ff', 70);
+  sunSpr = glow('#ffd36b', 650);
+  earthSpr = glow('#5fa8ff', 380);
   scene.add(sunSpr, earthSpr);
 
   const ro = new ResizeObserver(() => {
@@ -610,6 +657,13 @@ export function initScene(el, pick) {
   let fN = 0, fT0 = 0;
   (function loop(ts) {
     requestAnimationFrame(loop);
+
+    // Dynamic camera limits: smoothly allow full orbital perspective at zoom-out,
+    // while strictly preventing ground collision when close to lunar terrain
+    const camDist = camera.position.distanceTo(controls.target);
+    const targetPolar = camDist < 75 ? Math.PI * 0.48 : (camDist < 250 ? Math.PI * 0.58 : Math.PI * 0.88);
+    controls.maxPolarAngle = THREE.MathUtils.lerp(controls.maxPolarAngle, targetPolar, 0.05);
+
     controls.update();
     renderer.render(scene, camera);
     updateLabels();
@@ -637,12 +691,12 @@ export const toScene = v => new THREE.Vector3(v[1], -v[2], -v[0]).normalize();
 export function setTime(t) {
   const s = toScene(sunVec(t));
   U.sunDir.value.copy(s);
-  sunSpr.position.copy(s).multiplyScalar(1500);
+  sunSpr.position.copy(s).multiplyScalar(12000);
 
   const e = earthVec(t);
   const ed = toScene(e);
   U.earthDir.value.copy(ed);
-  earthSpr.position.copy(ed).multiplyScalar(1400);
+  earthSpr.position.copy(ed).multiplyScalar(11000);
 
   U.illumR.value.image.data.set(gridIllum(D.grids.regional, t, bufR));
   U.illumR.value.needsUpdate = true;
@@ -805,10 +859,12 @@ function updateLabels() {
     const p = pt.clone().project(camera);
     let vis = p.z < 1.0 && Math.abs(p.x) < 0.98 && Math.abs(p.y) < 0.98 && !(standingMode && l.classList.contains('geo'));
 
-    // 4. Scale decluttering: hide unselected site labels at extreme zoom-out
+    // 4. Scale decluttering: hide labels at high orbital distances
     const isSelected = l.classList.contains('on');
     const isGeo = l.classList.contains('geo');
-    if (!isSelected && camDist > 360 && !isGeo) {
+    if (camDist > 850) {
+      vis = false;
+    } else if (!isSelected && camDist > 320 && !isGeo) {
       vis = false;
     }
 
@@ -855,7 +911,7 @@ function updateHudIndicators() {
     const kmPerPx = (2 * dist * Math.tan(vFovRad / 2)) / canvasH;
 
     const rawKm = kmPerPx * 60;
-    const steps = [0.5, 1, 2, 5, 10, 20, 50, 100, 200];
+    const steps = [0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
     let bestKm = steps[0];
     for (const s of steps) {
       if (Math.abs(s - rawKm) < Math.abs(bestKm - rawKm)) bestKm = s;
@@ -956,11 +1012,11 @@ export function autoRotate(on, speed = 0.6) {
 
 export function overview() {
   standingMode = false;
-  controls.minDistance = 6.0;
-  controls.maxDistance = 420.0;
-  controls.maxPolarAngle = Math.PI * 0.48;
+  controls.minDistance = 4.0;
+  controls.maxDistance = 3800.0;
+  controls.maxPolarAngle = Math.PI * 0.58;
 
-  const targetPos = new THREE.Vector3(50, 160, 210);
+  const targetPos = new THREE.Vector3(60, 190, 240);
   const targetLook = new THREE.Vector3(0, 0, 0);
 
   const p0 = camera.position.clone();

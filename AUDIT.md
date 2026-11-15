@@ -154,3 +154,29 @@ A graphics and real-time visualization overhaul was engineered to elevate the re
      - View 8: Scientific Heatmap Mode with LOLA Hillshading
    - Zero console errors, zero WebGL shader compilation warnings across all presets and map layers.
 
+## Zoomed-Out Moon Continuity & Global Planetary Integration
+
+To eliminate the floating terrain tile/slab effect when zooming out, the 3D scene architecture was upgraded to transition the local LOLA terrain into a complete, authentic lunar planetary body:
+
+1. **Full $360^\circ$ Spherical Lunar Globe ($R = 1,737.4\text{ km}$)**:
+   - Built a complete lunar sphere centered at $(0, -R, 0)$ with apex at the South Pole $(0, 0, 0)$, extending $360^\circ$ in longitude and $180^\circ$ in latitude.
+   - Textured with NASA's official LROC WAC global lunar surface reflectance mosaic (`web/data/moon_globe.jpg`, 2048x1024 equirectangular), centered on $0^\circ$ longitude (Prime Meridian facing Earth / $-Z$).
+   - Displays authentic lunar maria, farside highlands, and southern impact craters (Schrödinger, Clavius, Bailly, Antoniadi, Drygalski) in their true geographic locations.
+
+2. **Seamless Radial Elevation Taper & Alpha Dissolve**:
+   - Replaced rectangular squircle apertures with smooth radial elevation tapering ($h \to 0$ from radius $155\text{ km}$ to $190\text{ km}$) matching the exact mathematical sphere datum ($-R + \sqrt{R^2 - \rho^2}$).
+   - Smooth radial alpha dissolve ($155\text{ km} \to 190\text{ km}$) between the high-resolution LOLA polar DEM and the global lunar sphere, eliminating all visible tile boundaries, cliffs, or seams.
+
+3. **Planetary Day/Night Terminator & Dynamic Orbital Camera**:
+   - Applied Lommel-Seeliger scattering and solar terminator penumbra across the entire globe matching the regional DEM.
+   - Dragging the timeline slider sweeps sunlight and shadows across the entire lunar globe body in real time based on JPL SPICE ephemerides.
+   - Expanded camera bounds (`maxDistance: 3800.0`, `far: 40000`), dynamically adjusting polar angle limits to keep the camera strictly above terrain at close range while allowing full orbital freedom at wide distances.
+   - Starfield backdrop expanded to $18,000\text{ km}$ deep space radius; Sun and Earth sprites positioned at $12,000\text{ km}$ and $11,000\text{ km}$ celestial distances.
+
+4. **Multi-Scale Verification Evidence (`media/zoom_continuity/`)**:
+   - `zoom_medium.png`: Regional terrain blending smoothly into the lunar sphere at 250-400 km.
+   - `zoom_orbital_full_moon.png`: Full spherical Moon body hanging in deep space with LROC cratered surface.
+   - `zoom_orbital_day.png` & `zoom_orbital_terminator_sweep.png`: Real-time day/night terminator sweeping across the entire lunar globe.
+   - `zoom_closeup_site.png`: Smooth return to Shackleton Rim / Connecting Ridge with close-up LOLA relief, sightlines, and metrics intact.
+
+

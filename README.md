@@ -78,7 +78,7 @@ flowchart LR
 cd web && python3 -m http.server 8000   # open http://localhost:8000
 ```
 
-Run the tests: `python -m pytest tests -q`
+Run the tests: `python -m pytest tests -q`. Test the site exactly as GitHub Pages serves it (gzip in transit): `python tools/serve_like_pages.py web 8000`.
 
 Rebuild data (about 3 minutes on 4 cores):
 

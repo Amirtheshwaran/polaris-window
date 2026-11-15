@@ -4,6 +4,7 @@ Readiness: release candidate & visual redesign verified locally; ready for deplo
 
 ## Findings & Resolutions
 
+- BLOCKER (resolved): Modal overlay occlusion and sticky Share dialog resolved. Author stylesheet rule `.modal-overlay { display: flex; }` was overriding user-agent `[hidden] { display: none; }`, keeping `#shareBox` visible at z-index 60 even after dismissal. Added `[hidden] { display: none !important; }` and `.modal-overlay[hidden] { display: none !important; }` in `web/css/style.css`, and bound `Escape` key listener in `web/js/main.js`.
 - BLOCKER (resolved): Inactive destination panels isolated via `.tab { display: none; }` and `.tab.on { display: block; }`. Explore → Plan → Science routing verified.
 - HIGH (resolved): Visual redesign completed with strict monochrome design system: Obsidian `#101113` and Lunar White `#E9E7E1` exclusively. Neon gradients and colored button accents removed.
 - HIGH (resolved): Terminology simplified into plain-English labels suitable for non-technical visitors ("Explore the Pole", "Find a Landing Date", "How It Works", "Direct Earth view", "Ground slope", "Terrain horizon").

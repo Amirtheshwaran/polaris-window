@@ -1,9 +1,10 @@
-import { SAFE_SLOPE, D, loadAll, allSites, addCustom, removeCustom, siteState, stats, findWindows, gridAverage, tIndex, tDate, fmtDate, fmtDay, pct, hrs, HOUR } from './data.js';
+import { LOAD, SAFE_SLOPE, D, loadAll, allSites, addCustom, removeCustom, siteState, stats, findWindows, gridAverage, tIndex, tDate, fmtDate, fmtDay, pct, hrs, HOUR } from './data.js';
 import * as SC from './scene.js';
 import { drawPano, drawStrip } from './pano.js';
 
 const $ = id => document.getElementById(id), $$ = q => [...document.querySelectorAll(q)];
-const ST = { site: 'ridge', t: 0, tab: 'site', layer: 'light', mode: 'explore', cmp: ['ridge', 'malapert', 'nobile', 'haworth'], playing: false, heat: null };
+const ST = { site: 'ridge', t: 0, tab: 'site', layer: 'light', mode: 'explore', cmp: ['ridge', 'a3_malapert_massif', 'a3_mons_mouton', 'a3_haworth'], playing: false, heat: null };
+const ALIAS = { malapert: 'a3_malapert_massif', nobile: 'a3_nobile_rim_1', mouton: 'a3_mons_mouton', haworth: 'a3_haworth', degerlache: 'a3_de_gerlache_rim_2' };
 const site = () => allSites().find(s => s.id === ST.site) || D.sites[0];
 const COLORS = ['#fbbf24', '#60a5fa', '#34d399', '#f472b6'];
 let cmpChart, cmpChart2, rafPending = false;
@@ -13,10 +14,10 @@ function toast(m) { const t = $('toast'); t.textContent = m; t.hidden = false; c
 // ------------------------------------------------------------- URL state (shareable links)
 function readHash() {
   const p = new URLSearchParams(location.hash.slice(1));
-  if (p.get('site')) ST.site = p.get('site');
+  if (p.get('site')) ST.site = ALIAS[p.get('site')] || p.get('site');
   if (p.get('t')) ST.t = tIndex(Date.parse(p.get('t') + ':00:00Z'));
   for (const k of ['tab', 'layer', 'mode']) if (p.get(k)) ST[k] = p.get(k);
-  if (p.get('cmp')) ST.cmp = p.get('cmp').split(',');
+  if (p.get('cmp')) ST.cmp = p.get('cmp').split(',').map(id => ALIAS[id] || id);
   if (p.get('cx')) { const s = addCustom(+p.get('cx'), +p.get('cy'), p.get('cn') || 'Shared site', false); if (s) ST.site = s.id; }
   if (p.get('hm')) ST.heatReq = { metric: p.get('hm'), from: p.get('hf'), to: p.get('ht') };
 }
@@ -30,8 +31,10 @@ function writeHash() {
 
 // ------------------------------------------------------------- render pieces
 function renderSiteList() {
-  $('siteList').innerHTML = allSites().map(s => `<li data-id="${s.id}" class="${s.id === ST.site ? 'on' : ''}"><span>${s.name}<br><small>${s.lat.toFixed(2)}°, ${s.lon.toFixed(1)}°E</small></span>${s.custom ? '<span class="x" title="Remove">✕</span>' : ''}</li>`).join('');
-  SC.setMarkers(allSites(), ST.site, selectSite);
+  const li = s => `<li data-id="${s.id}" class="${s.id === ST.site ? 'on' : ''}"><span>${s.name}<br><small>${s.lat.toFixed(2)}°, ${s.lon.toFixed(1)}°E</small></span>${s.custom ? '<span class="x" title="Remove">✕</span>' : ''}</li>`;
+  const A = allSites().filter(s => s.artemis), O = allSites().filter(s => !s.artemis && !s.custom && !s.clps), K = allSites().filter(s => s.clps), C = allSites().filter(s => s.custom);
+  $('siteList').innerHTML = `<li class="grp">🚀 NASA Artemis III candidate regions</li>${A.map(li).join('')}<li class="grp">🔬 Science sites</li>${O.map(li).join('')}<li class="grp">🛬 Real CLPS landings</li>${K.map(li).join('')}${C.length ? '<li class="grp">📍 Your sites</li>' + C.map(li).join('') : ''}`;
+  SC.setMarkers(allSites(), ST.site, selectSite); SC.setRegions(allSites(), ST.site);
 }
 function selectSite(id, fly = true) {
   ST.site = id; renderSiteList(); const s = site(); if (fly) SC.flyTo(s, false); update(); renderTab();
@@ -45,26 +48,30 @@ function update() {
     $('time').value = ST.t; $('timeInput').value = d.toISOString().slice(0, 16);
     SC.setTime(ST.t);
     $('hudSite').textContent = s.name;
-    $('hudSun').innerHTML = `${fmtDate(d)} · Sun ${st.sel.toFixed(2)}° ${st.sun > .5 ? '<b style="color:#fbbf24">sunlit</b>' : 'shadow'} · Earth ${st.eel.toFixed(1)}° ${st.earth ? '<b style="color:#60a5fa">in view</b>' : 'blocked'}`;
+    $('hudSun').innerHTML = `${fmtDate(d)} · Sun ${st.sel.toFixed(2)}° ${st.sun > .5 ? '<b style="color:#fbbf24">sunlit</b>' : 'shadow'} · Earth ${st.eel.toFixed(1)}° ${st.earth ? '<b style="color:#60a5fa">in view</b>' : 'blocked'}` +
+      (st.sel < 0 && st.sun > .5 ? '<br><span style="color:#fbbf24">The Sun is below a flat horizon, but this spot is higher than the land around it, so it can still see the Sun.</span>' : '');
     if (ST.tab === 'site') renderSiteTab();
     writeHash();
   });
 }
 
-function stat(v, l) { return `<div class="stat"><b>${v}</b><span>${l}</span></div>`; }
+function stat(v, l, cls = '') { return `<div class="stat ${cls}"><b>${v}</b><span>${l}</span></div>`; }
 function renderSiteTab() {
   const s = site(), st = siteState(s, ST.t);
   $('siteName').textContent = s.name;
-  $('siteMeta').innerHTML = `${s.note}<br>lat ${s.lat.toFixed(3)}°, lon ${s.lon.toFixed(2)}°E · elevation ${(s.elev / 1000).toFixed(2)} km · <a href="#" id="standBtn">🧍 Stand here in 3D</a> · <a href="#" id="overBtn">overview</a> · <a target="_blank" rel="noopener" title="Open NASA/JPL Horizons and compare the Sun elevation with ours" href="${horizonsURL(s)}">✅ verify in JPL Horizons</a>`;
-  $('standBtn').onclick = e => { e.preventDefault(); SC.setExag(1); $('exag').value = 1; $('exagV').textContent = 1; SC.flyTo(s, true); };
+  $('siteMeta').innerHTML = `${s.note}<br>lat ${s.lat.toFixed(3)}°, lon ${s.lon.toFixed(2)}°E · elevation ${(s.elev / 1000).toFixed(2)} km · 🧍 Stand here in 3D, looking at the <a href="#" id="standBtn">☀️ Sun</a> or <a href="#" id="standEarth">🌍 Earth</a> · <a href="#" id="overBtn">overview</a> · <a target="_blank" rel="noopener" title="Open NASA/JPL Horizons and compare the Sun elevation with ours" href="${horizonsURL(s)}">✅ verify in JPL Horizons</a><br>See it in NASA tools (coordinates copied when you click): <a class="ext" target="_blank" rel="noopener" href="https://trek.nasa.gov/moon/">🌕 Moon Trek</a> · <a class="ext" target="_blank" rel="noopener" href="https://quickmap.lroc.asu.edu/">🛰 LROC QuickMap</a>`;
+  $$('#siteMeta a.ext').forEach(a => a.onclick = () => { navigator.clipboard?.writeText(`${s.lat.toFixed(4)}, ${s.lon > 180 ? (s.lon - 360).toFixed(4) : s.lon.toFixed(4)}`); toast(`Copied ${s.name} coordinates: paste them into the search box`); });
+  const stand = look => e => { e.preventDefault(); SC.setExag(1); $('exag').value = 1; $('exagV').textContent = 1; SC.flyTo(s, true, look); };
+  $('standBtn').onclick = stand('sun'); $('standEarth').onclick = stand('earth');
   $('overBtn').onclick = e => { e.preventDefault(); SC.overview(); };
-  drawPano($('pano'), s, ST.t); drawStrip($('siteStrip'), s, ST.t);
+  drawPano($('pano'), s, ST.t); drawStrip($('siteStrip'), s, ST.t, ST.mission && ST.mission.t === ST.t && ST.mission.site === s.id ? ST.mission.days : 0);
   const m = stats(s, ST.t, Math.min(D.T, ST.t + 24 * 365));
   $('verdict').innerHTML = verdict(s, m, st);
   $('siteStats').innerHTML = stat('☀️ ' + pct(m.sun), 'of the time in sunlight (next 12 months)') + stat('🌍 ' + pct(m.earth), 'of the time Earth is in view (radio home)') + stat('🌑 ' + hrs(m.maxDark), 'longest night (no solar power)') +
-    stat('📵 ' + hrs(m.maxBlk), 'longest time without Earth (comms blackout)') + stat(pct(m.both), 'sun AND Earth together') + stat('⚡ ' + Math.round(m.powerW) + ' W', 'average power from a 10 m² solar panel') +
-    (s.validation ? stat(pct(s.validation.ours) + ' / ' + pct(s.validation.nasa), 'ours vs NASA map, 2009–13') : '') +
-    stat(st.sel.toFixed(2) + '° / ' + st.shz.toFixed(2) + '°', 'Sun elev. / terrain horizon now') + stat(st.eel.toFixed(2) + '°', 'Earth elevation now');
+    stat('📵 ' + hrs(m.maxBlk), 'longest time without Earth (comms blackout)') + stat(pct(m.both), 'sun AND Earth together', 'planner-only') + stat('⚡ ' + Math.round(m.powerW) + ' W', 'average power from a 10 m² solar panel', 'planner-only') +
+    (s.validation ? stat(pct(s.validation.ours) + ' / ' + pct(s.validation.nasa), 'ours vs NASA map, 2009–13', 'planner-only') : '') +
+    stat(st.sel.toFixed(2) + '° / ' + st.shz.toFixed(2) + '°', 'Sun elev. / terrain horizon now', 'planner-only') + stat(st.eel.toFixed(2) + '°', 'Earth elevation now', 'planner-only') +
+    (s.slope != null ? stat('⛰️ ' + s.slope + '°', 'ground slope (landers need under about 8°)', 'planner-only') : '');
 }
 
 // ------------------------------------------------------------- window finder
@@ -90,8 +97,9 @@ function runWindows() {
     r.curve.forEach((v, k) => { if (v > 0) { g.fillStyle = `hsl(${40 + v}, 90%, ${25 + v * .4}%)`; g.fillRect(k / r.curve.length * W, 0, Math.ceil(W / r.curve.length) + 1, H); } });
     g.fillStyle = '#fff'; r.picked.forEach(w => g.fillRect((w.a - r.a0) / r.step / r.curve.length * W - dpr, 0, 2 * dpr, H));
   });
-  $$('#wOut tr.click').forEach(tr => tr.onclick = () => { ST.t = +tr.dataset.t; switchTab('site'); selectSite(tr.dataset.site); });
-  if (best) $('goBest').onclick = e => { e.preventDefault(); ST.t = best.r.picked[0].a; switchTab('site'); selectSite(best.s.id); };
+  const go = (sid, t) => { ST.t = t; ST.mission = { site: sid, t, days: c.days }; switchTab('site'); selectSite(sid); };
+  $$('#wOut tr.click').forEach(tr => tr.onclick = () => go(tr.dataset.site, +tr.dataset.t));
+  if (best) $('goBest').onclick = e => { e.preventDefault(); go(best.s.id, best.r.picked[0].a); };
 }
 
 // ------------------------------------------------------------- compare
@@ -170,10 +178,12 @@ function renderValid() {
 function renderAbout() {
   $('aboutOut').innerHTML = `<p>Polaris Window answers the mission planner's real question: <b>when and where should we land?</b> It combines real NASA terrain and ephemeris into four tools: a live 3D south pole, a stand-at-site horizon panorama, an automatic landing-window finder, and side-by-side site comparison with heatmaps.</p>
   <h3>How it works</h3><ol class="meta"><li>LOLA LDEM_80S_80M (80 m/pixel) is ray-marched in 120–720 directions out to 220 km, including lunar curvature, to get each point's terrain horizon.</li>
-  <li>NAIF SPICE (DE440 + lunar MOON_ME frame) gives hourly Sun and Earth vectors for 2026–2030.</li>
+  <li>NAIF SPICE (DE440 + lunar MOON_ME frame) gives hourly Sun and Earth vectors for 2025–2030.</li>
   <li>The browser compares Sun/Earth elevation with the terrain horizon at their azimuth, for any site and any date, with no server.</li>
   <li>Results are checked against NASA PGDA illumination maps and JPL Horizons (Validation tab).</li></ol>
-  <h3>Assumptions</h3><p class="meta">Observer 2 m above ground. Sunlight counts partial solar disc. Earth "visible" = Earth's center above the terrain horizon (direct-to-Earth line of sight). Power: 10 m² vertical sun-tracking array, 30% efficiency. Artemis III region coordinates are approximate.</p>
+  <h3>Assumptions</h3><p class="meta">Observer 2 m above ground. Sunlight counts partial solar disc. Earth "visible" = Earth's center above the terrain horizon (direct-to-Earth line of sight). Power: 10 m² vertical sun-tracking array, 30% efficiency. Region pins are our model's best spots, not NASA-designated landing points.</p>
+  <h3>Case study: IM-2 Athena (CLPS, March 2025)</h3><p class="meta">At Athena's reported landing location our model gives 100% sunlight and Earth visibility for its planned 10-day mission, on a 2.6° slope, so the site and date were sound. Its long-term sunlight (46.8%) matches NASA's map (46.8%). The lander was lost to a small crater and a tip-over, below the 80 m resolution used here. That shows where high-resolution hazard mapping comes next.</p>
+  <h3>Landing regions</h3><p class="meta">The nine NASA Artemis III candidate regions (announced October 2024) use the official USGS footprints (McClernan 2024, doi:10.5066/P1MEQ6UK). Mons Mouton Plateau uses an approximate 15 km box. Each pin is our best spot inside the region: the most sunlight and Earth visibility on ground flatter than 8°.</p>
   <h3>Data</h3><p class="meta">NASA LRO LOLA (PDS Geosciences Node) · NASA/JPL NAIF SPICE · NASA PGDA Lunar Polar Illumination (Mazarico et al. 2011) · JPL Horizons. Built with Three.js, Chart.js, Python, NumPy, Numba, SpiceyPy.</p>`;
 }
 
@@ -183,7 +193,10 @@ function verdict(s, m, st) {
   const pw = m.sun > .75 ? 'excellent for solar power' : m.sun > .55 ? 'good for solar power' : m.sun > .2 ? 'often dark, so it needs big batteries' : 'almost always dark, a cold trap where ice can hide';
   const cm = m.earth > .75 ? 'Earth is almost always in view' : m.earth > .45 ? 'Earth is in view about half the time' : m.earth > 0.05 ? 'Earth is often hidden behind mountains' : 'Earth is never in view, so it needs a relay satellite';
   const sl = s.slope == null ? '' : s.slope <= SAFE_SLOPE ? ` The ground is flat enough to land (${s.slope}° slope).` : ` The ground is steep (${s.slope}°), which is risky for a lander.`;
-  return `<b>${s.name}</b> is ${pw}, and ${cm}.${sl}<div class="rate"><span title="Sunlight">☀️ Power ${stars(m.sun, '★')}</span><span title="Earth visibility">📡 Talk to Earth ${stars(m.earth, '★')}</span></div>
+  const kwh = Math.round(m.maxDark * 1), cars = Math.max(1, Math.round(kwh / 60));
+  const bat = m.maxDark > 0 && m.sun > .05 ? ` To keep a 1 kW base running through the longest night (${hrs(m.maxDark)}) you need about ${kwh.toLocaleString()} kWh of batteries, roughly ${cars} electric-car batter${cars === 1 ? 'y' : 'ies'}.` : '';
+  const story = s.story ? `<div class="story">📖 <b>True story:</b> ${s.story} <a href="#" onclick="PW.goLanding('${s.id}');return false">⏱ Go to the landing moment</a></div>` : '';
+  return `${story}<b>${s.name}</b> is ${pw}, and ${cm}.${sl}${bat}<div class="rate"><span title="Sunlight">☀️ Power ${stars(m.sun, '★')}</span><span title="Earth visibility">📡 Talk to Earth ${stars(m.earth, '★')}</span></div>
   <div class="meta" style="margin:6px 0 0">Right now: the Sun is ${st.sun > .5 ? '<b style="color:#fbbf24">shining here</b>' : 'hidden'} and Earth is ${st.earth ? '<b style="color:#60a5fa">in view</b>' : 'hidden'}.</div>`;
 }
 function horizonsURL(s) {
@@ -203,11 +216,13 @@ function setMode(m) { ST.mode = m; document.body.className = m; $$('#modes butto
 const TOUR = [
   ['This is the real lunar south pole, built from NASA LRO laser altimetry. Here the Sun never climbs more than about 1.6° above the horizon, so every hill and crater rim decides who gets power.', () => { SC.overview(); setLayer('light'); play(true); }],
   ['Watch the shadows sweep as the Sun circles the horizon once a month. Crater floors like Shackleton stay dark for billions of years: that is where the water ice is.', () => { selectSite('shackleton'); }],
+  ['The green boxes are NASA\'s nine Artemis III candidate landing regions, using official USGS boundaries. Inside each one, we found the flat spot with the most sunlight and Earth contact.', () => { play(false); SC.overview(); }],
   ['The Connecting Ridge sits in sunlight about 90% of the time. Planners want this: near-continuous solar power next to the ice.', () => { play(false); switchTab('site'); selectSite('ridge'); }],
   ['Stand at the site: the panorama shows the real horizon, the Sun path (gold) and Earth path (blue) for the next month. When Earth dips behind the terrain, direct-to-Earth comms go dark.', () => { const s = site(); SC.setExag(1); SC.flyTo(s, true); }],
   ['Heatmap mode colors the whole region by how often it is sunlit over any date range.', () => { switchTab('heat'); runHeat({ metric: 'sun', from: '2027-01-01', to: '2027-12-31' }); SC.setExag(3); SC.overview(); }],
   ['Compare sites side by side: sunlight, Earth visibility and the longest blackout, month by month.', () => switchTab('compare')],
   ['Planner mode: give it a mission length and power/comms limits, and the window finder ranks every possible landing date.', () => { setMode('planner'); switchTab('windows'); runWindows(); }],
+  ['A true story: in March 2025 the CLPS lander Athena picked a great spot here, with 100% sun and Earth for 10 days. But it landed in a small crater, tipped over and ran out of power. Picking the place and date is step one, and the next step is mapping small hazards.', () => { setMode('explore'); switchTab('site'); PW.goLanding('clps_im2'); }],
   ['Every number is checked against NASA: our illumination model matches NASA\'s published map with r ≈ 0.99, and our ephemeris matches JPL Horizons to 0.001°.', () => switchTab('valid')],
 ];
 let tourI = 0;
@@ -232,9 +247,9 @@ function demo() {
     [2000, () => cap('Landing at the Moon\'s south pole means fighting for sunlight and a line of sight to Earth.')],
     [5000, () => cap('Polaris Window<small>Know exactly when and where to land</small>', true)],
     [8500, () => { SC.autoRotate(false); play(false); ST.t = tIndex(Date.parse('2027-03-01T00:00Z')); switchTab('site'); selectSite('ridge'); cap('Built on NASA LOLA terrain and JPL ephemeris: stand at any site and watch the Sun and Earth cross the real horizon.'); }],
-    [11500, () => { $('speed').value = 4; play(true); }],
+    [11000, () => { SC.setExag(1); SC.flyTo(site(), true); $('speed').value = 1; play(true); }],
     [14000, () => { play(false); switchTab('windows'); runWindows(); cap('Enter your mission length and power and comms limits, and it ranks the best landing dates.'); }],
-    [19000, () => { switchTab('heat'); SC.overview(); SC.autoRotate(true, 1.2); runHeat({ metric: 'land', from: '2027-01-01', to: '2027-12-31' }); cap('Map sunlight, Earth contact and safe flat ground across the whole region…'); }],
+    [19000, () => { SC.setExag(3); switchTab('heat'); SC.overview(); SC.autoRotate(true, 1.2); runHeat({ metric: 'land', from: '2027-01-01', to: '2027-12-31' }); cap('Map sunlight, Earth contact and safe flat ground across the whole region…'); }],
     [23000, () => { switchTab('valid'); cap('…and every result is checked against NASA\'s own illumination maps and JPL Horizons.'); }],
     [26000, () => { setLayer('light'); $('speed').value = 12; play(true); cap('From mission planners to classrooms: pick your window to the Moon.'); }],
     [30000, () => { play(false); SC.autoRotate(false); cap('Polaris Window<small>amirtheshwaran.github.io/polaris-window</small>', true); }],
@@ -249,20 +264,29 @@ function demo() {
   const gl = document.createElement('canvas').getContext('webgl2') || document.createElement('canvas').getContext('webgl');
   if (!gl) { $('loadMsg').innerHTML = 'Polaris Window needs WebGL (3D graphics). Please open it in an up-to-date Chrome, Edge, Firefox or Safari, with hardware acceleration turned on.'; document.querySelector('.spin').style.display = 'none'; return; }
   const hadHash = location.hash.length > 1, isDemo = /demo=1/.test(location.hash);
+  LOAD.onprog = () => { $('pfill').style.width = Math.min(100, LOAD.got / LOAD.total * 100) + '%'; $('loadMsg').textContent = `Loading real NASA Moon terrain… ${(LOAD.got / 1e6).toFixed(1)} MB`; };
   try { await loadAll(); } catch (e) { $('loadMsg').textContent = 'Could not load data: ' + e.message + '. Please refresh.'; return; }
   ST.t = tIndex(Date.now());
   readHash();
   $('time').max = D.T - 1; $('time').value = ST.t;
   SC.initScene($('view3d'), (x, y) => pick(x, y));
-  setMode(ST.mode); renderSiteList(); switchTab(ST.tab); setLayer(ST.layer === 'heat' && !ST.heatReq ? 'light' : ST.layer);
+  setMode(ST.mode); renderSiteList(); switchTab(ST.tab); setLayer('light');
   if (ST.heatReq) runHeat(ST.heatReq);
   SC.flyTo(site(), false);
   $('loading').remove();
   $('time').oninput = e => { ST.t = +e.target.value; update(); };
   $('timeInput').onchange = e => { ST.t = tIndex(Date.parse(e.target.value + 'Z')); update(); };
   $('play').onclick = () => play();
+  $('trust').onclick = e => { e.preventDefault(); switchTab('valid'); };
+  $('csvBtn').onclick = () => {
+    const s = site(), a = ST.t, b = Math.min(D.T, a + 24 * 365), rows = ['utc,sun_az_deg,sun_el_deg,sun_horizon_deg,sun_disc_visible_frac,earth_az_deg,earth_el_deg,earth_horizon_deg,earth_visible'];
+    for (let t = a; t < b; t++) { const q = siteState(s, t); rows.push([tDate(t).toISOString().slice(0, 16) + 'Z', q.saz.toFixed(3), q.sel.toFixed(4), q.shz.toFixed(3), q.sun.toFixed(3), q.eaz.toFixed(3), q.eel.toFixed(4), q.ehz.toFixed(3), q.earth].join(',')); }
+    const head = `# Polaris Window export: ${s.name} lat ${s.lat} lon ${s.lon}E elev ${s.elev} m (LOLA), observer +2 m. Azimuth: map-plane, 0 deg = toward lon 0. Frame MOON_ME, ephemeris NAIF DE440.\n`;
+    const url = URL.createObjectURL(new Blob([head + rows.join('\n')], { type: 'text/csv' }));
+    const A = document.createElement('a'); A.href = url; A.download = `polaris-window_${s.id}_${fmtDay(tDate(a))}.csv`; A.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+  };
   $('exag').oninput = e => { $('exagV').textContent = e.target.value; SC.setExag(+e.target.value); renderSiteList(); };
-  $('siteList').onclick = e => { const li = e.target.closest('li'); if (!li) return; const s = allSites().find(x => x.id === li.dataset.id);
+  $('siteList').onclick = e => { const li = e.target.closest('li'); if (!li || !li.dataset.id) return; const s = allSites().find(x => x.id === li.dataset.id);
     if (e.target.classList.contains('x')) { removeCustom(s); if (ST.site === s.id) ST.site = 'ridge'; renderSiteList(); update(); return; } selectSite(s.id); };
   $$('#tabs button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
   $$('#modes button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
@@ -278,5 +302,5 @@ function demo() {
   if (isDemo) setTimeout(demo, 800);
   $$('#welcome button').forEach(b => b.onclick = () => { $('welcome').hidden = true; const w = b.dataset.w;
     if (w === 'tour') tour(0); else if (w === 'date') { switchTab('windows'); runWindows(); } else { switchTab('site'); selectSite('ridge'); } });
-  window.PW = { ST, D, tour, runWindows, runHeat, selectSite, switchTab, demo }; // console / demo-recording hooks
+  window.PW = { ST, D, tour, runWindows, runHeat, selectSite, switchTab, demo, goLanding: id => { const s = allSites().find(x => x.id === id); ST.t = tIndex(Date.parse(s.landed)); ST.mission = { site: id, t: ST.t, days: 10 }; selectSite(id); } }; // console / demo-recording hooks
 })();

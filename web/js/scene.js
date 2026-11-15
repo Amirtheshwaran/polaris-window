@@ -1,14 +1,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { D, sunVec, earthVec, gridIllum } from './data.js';
+import { D, sunVec, earthVec, gridIllum, heightAt } from './data.js';
 
 const R = 1737400;
-let renderer, scene, camera, controls, meshR, meshC, sunSpr, earthSpr, markers = new THREE.Group(), raycaster = new THREE.Raycaster();
+let renderer, scene, camera, controls, meshR, meshC, sunSpr, earthSpr, markers = new THREE.Group(), regionGrp = new THREE.Group(), raycaster = new THREE.Raycaster();
 const U = {
   illumR: { value: null }, illumC: { value: null }, heatR: { value: null }, heatC: { value: null }, ramp: { value: null },
   mode: { value: 0 }, sunDir: { value: new THREE.Vector3(1, .02, 0) }, coreHalf: { value: 40000 }, regHalf: { value: 192000 }, isCore: { value: 0 },
 };
-let bufR, bufC, exag = 3, onPick = null, labelEls = [];
+let bufR, bufC, exag = 3, onPick = null, labelEls = [], standingMode = false;
 export const S = { get camera() { return camera; } };
 
 function tex(n) { const t = new THREE.DataTexture(new Uint8Array(n * n), n, n, THREE.RedFormat); t.magFilter = t.minFilter = THREE.LinearFilter; t.needsUpdate = true; return t; }
@@ -90,7 +90,7 @@ export function initScene(el, pick) {
   bufR = new Uint8Array(D.grids.regional.n ** 2); bufC = new Uint8Array(D.grids.core.n ** 2);
   meshR = buildMesh(D.terrain, D.meta.terrain.half, D.meta.terrain.n, 0);
   meshC = buildMesh(D.terrainCore, D.meta.terrain_core.half, D.meta.terrain_core.n, 1);
-  applyHeights(meshR); applyHeights(meshC); scene.add(meshR, meshC, markers);
+  applyHeights(meshR); applyHeights(meshC); scene.add(meshR, meshC, markers, regionGrp);
   // stars
   const sp = new Float32Array(3000 * 3); for (let i = 0; i < sp.length; i += 3) { const v = new THREE.Vector3().randomDirection().multiplyScalar(3000); sp.set([v.x, v.y, v.z], i); }
   const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
@@ -125,7 +125,22 @@ export function setHeat(name, vals, vmax) {
   for (let i = 0; i < vals.length; i++) d[i] = Math.min(255, 255 * vals[i] / vmax); t.needsUpdate = true;
 }
 export function setMode(m) { U.mode.value = m === 'heat' ? 1 : 0; }
-export function setExag(v) { exag = v; applyHeights(meshR); applyHeights(meshC); }
+export function setExag(v) { exag = v; applyHeights(meshR); applyHeights(meshC); drawRegions(); }
+// Artemis III candidate region outlines (USGS footprints), draped on the terrain
+let regionSites = [], regionSel = null;
+export function setRegions(sites, selId) { regionSites = sites.filter(s => s.region); regionSel = selId; drawRegions(); }
+function drawRegions() {
+  regionGrp.clear();
+  for (const s of regionSites) {
+    const o = s.region.outline, pts = [];
+    for (let e = 0; e < 4; e++) {
+      const [x0, y0] = o[e], [x1, y1] = o[(e + 1) % 4], n = Math.max(2, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 400));
+      for (let k = 0; k < n; k++) { const x = x0 + (x1 - x0) * k / n, y = y0 + (y1 - y0) * k / n; pts.push(new THREE.Vector3(x / 1000, sceneY(x, y, heightAt(x, y)) + 0.25, -y / 1000)); }
+    }
+    const on = s.id === regionSel;
+    regionGrp.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: on ? 0xfbbf24 : 0x34d399, transparent: true, opacity: on ? 1 : .7 })));
+  }
+}
 
 export function setMarkers(sites, selId, onSel) {
   markers.clear(); labelEls.forEach(l => l.remove()); labelEls = [];
@@ -137,21 +152,26 @@ export function setMarkers(sites, selId, onSel) {
     const l = document.createElement('div'); l.className = 'lbl' + (on ? ' on' : ''); l.textContent = s.name; l.onclick = () => onSel(s.id);
     l._p = new THREE.Vector3(s.x / 1000, y + 6.5, -s.y / 1000); box.appendChild(l); labelEls.push(l);
   }
+  for (const [txt, x, y] of [['⊕ South Pole', 0, 0], ['🌍 Earth is this way →', 0, 150000]]) {
+    const l = document.createElement('div'); l.className = 'lbl geo'; l.textContent = txt;
+    l._p = new THREE.Vector3(x / 1000, sceneY(x, y, heightAt(x, y)) + 3, -y / 1000); box.appendChild(l); labelEls.push(l);
+  }
 }
 function updateLabels() {
   const r = renderer.domElement.getBoundingClientRect();
   for (const l of labelEls) {
-    const p = l._p.clone().project(camera), vis = p.z < 1 && Math.abs(p.x) < 1.05 && Math.abs(p.y) < 1.05;
+    const p = l._p.clone().project(camera), vis = p.z < 1 && Math.abs(p.x) < 1.05 && Math.abs(p.y) < 1.05 && !(standingMode && l.classList.contains('geo'));
     l.style.display = vis ? '' : 'none';
     if (vis) { l.style.left = (r.left + (p.x + 1) / 2 * r.width) + 'px'; l.style.top = (r.top + (1 - p.y) / 2 * r.height) + 'px'; }
   }
 }
 
-export function flyTo(s, standing) {
+export function flyTo(s, standing, look = 'sun') {
+  standingMode = !!standing;
   const y = sceneY(s.x, s.y, s.elev), tgt = new THREE.Vector3(s.x / 1000, y, -s.y / 1000);
   let pos;
   if (standing) { // eye 30 m (×exaggeration) above ground, look toward the Sun
-    const sd = U.sunDir.value.clone().setY(0).normalize();
+    const sd = (look === 'earth' ? earthSpr.position.clone().normalize() : U.sunDir.value.clone()).setY(0).normalize();
     const eye = tgt.clone().add(new THREE.Vector3(0, 0.03 * exag + 0.02, 0));
     controls.target.copy(eye.clone().add(sd.multiplyScalar(0.05))); pos = eye; controls.minDistance = 0.001;
   } else {
@@ -162,5 +182,6 @@ export function flyTo(s, standing) {
   (function anim() { const k = Math.min(1, (performance.now() - t0) / 900), e = k * k * (3 - 2 * k); camera.position.lerpVectors(p0, pos, e); if (k < 1) requestAnimationFrame(anim); })();
 }
 export function autoRotate(on, speed = 0.6) { controls.autoRotate = on; controls.autoRotateSpeed = speed; }
-export function overview() { controls.minDistance = .5; controls.target.set(0, 0, 0); camera.position.set(60, 160, 200); }
+export function overview() {
+  standingMode = false; controls.minDistance = .5; controls.target.set(0, 0, 0); camera.position.set(60, 160, 200); }
 export function snapshot() { return renderer.domElement.toDataURL('image/png'); }

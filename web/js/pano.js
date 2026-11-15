@@ -1,4 +1,4 @@
-import { siteState, series, tDate, D } from './data.js';
+import { siteState, series, tDate, D, sunVec, earthVec } from './data.js';
 
 const DIRS = { 0: 'Earth side', 180: 'far side' };
 
@@ -37,7 +37,17 @@ export function drawPano(cv, s, t) {
     g.fillStyle = gr; g.beginPath(); g.arc(x, y, r * 3, 0, 7); g.fill(); g.fillStyle = c1; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
     g.fillStyle = '#e5e7eb'; g.font = `600 ${11 * dpr}px system-ui`; g.fillText(label, Math.min(x + r + 4 * dpr, W - 110 * dpr), y - r);
   };
+  // Earth phase as seen from the Moon: lit fraction = (1 - cos θ)/2, θ = angle Sun–site–Earth
+  const sv = sunVec(t), ev = earthVec(t), ex = ev[0] - s.pos[0], ey = ev[1] - s.pos[1], ez = ev[2] - s.pos[2];
+  const cth = (sv[0] * ex + sv[1] * ey + sv[2] * ez) / Math.hypot(ex, ey, ez), lit = (1 - cth) / 2;
   disc(cur.eaz, cur.eel, 5 * dpr, '#bfdbfe', '#3b82f699', 'Earth ' + cur.eel.toFixed(1) + '°' + (cur.earth ? '' : ' (blocked)'));
+  { // phase disc: dark Earth, lit part toward the Sun's side on screen
+    const x = X(cur.eaz), y = Y(cur.eel), r = 5 * dpr, dir = Math.sign(((cur.saz - cur.eaz + 540) % 360) - 180) || 1;
+    g.fillStyle = '#0b1a33'; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+    g.fillStyle = '#93c5fd'; g.beginPath(); g.arc(x, y, r, -Math.PI / 2, Math.PI / 2, dir < 0);
+    g.ellipse(x, y, r * Math.abs(2 * lit - 1), r, 0, Math.PI / 2, -Math.PI / 2, (lit > .5) === (dir < 0)); g.fill();
+    g.fillStyle = '#94a3b8'; g.font = `${10 * dpr}px system-ui`; g.fillText(`Earth phase: ${Math.round(lit * 100)}% lit`, Math.min(x + r + 4 * dpr, W - 110 * dpr), y + r + 12 * dpr);
+  }
   disc(cur.saz, cur.sel, 6 * dpr, '#fffbeb', '#fbbf24aa', 'Sun ' + cur.sel.toFixed(2) + '°' + (cur.sun > .5 ? '' : ' (in shadow)'));
   // azimuth axis
   g.fillStyle = '#0b1220'; g.fillRect(0, H - 22 * dpr, W, 22 * dpr); g.fillStyle = '#94a3b8'; g.font = `${10 * dpr}px system-ui`;
@@ -45,7 +55,7 @@ export function drawPano(cv, s, t) {
   g.fillStyle = '#64748b'; g.fillText(`vert. ×${(((H - 22 * dpr) / (top - bot)) / (W / 360)).toFixed(1)}`, W - 70 * dpr, 12 * dpr);
 }
 
-export function drawStrip(cv, s, t) {
+export function drawStrip(cv, s, t, missionDays = 0) {
   const dpr = devicePixelRatio || 1, W = cv.clientWidth * dpr, H = 70 * dpr; cv.width = W; cv.height = H;
   const g = cv.getContext('2d'), { sun, earth } = series(s), L = 60 * 24;
   g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
@@ -54,6 +64,7 @@ export function drawStrip(cv, s, t) {
     g.fillStyle = `rgba(251,191,36,${sv})`; g.fillRect(x, 4 * dpr, w, 26 * dpr);
     g.fillStyle = earth[t + k] ? '#3b82f6' : '#000'; g.fillRect(x, 34 * dpr, w, 18 * dpr);
   }
+  if (missionDays) { const w = missionDays / 60 * W; g.strokeStyle = '#34d399'; g.lineWidth = 2 * dpr; g.strokeRect(dpr, dpr, w - 2 * dpr, 52 * dpr); g.fillStyle = '#34d399'; g.font = `600 ${10 * dpr}px system-ui`; g.fillText(`your ${missionDays}-day mission`, 4 * dpr, 46 * dpr); }
   g.fillStyle = '#94a3b8'; g.font = `${10 * dpr}px system-ui`;
   for (let d = 0; d <= 60; d += 10) { const x = d / 60 * W; g.fillRect(x, 52 * dpr, 1, 4 * dpr); g.fillText(tDate(t + d * 24).toISOString().slice(5, 10), Math.min(x + 2 * dpr, W - 34 * dpr), 66 * dpr); }
 }

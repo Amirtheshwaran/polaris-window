@@ -3,7 +3,15 @@ export const D = { meta: null, sites: [], ephem: null, T: 0, t0: 0, grids: {}, c
 const R = 1737400, DEG = Math.PI / 180, SUN_R = 0.267;
 export const HOUR = 3600e3;
 
-async function bin(url, Type) { const b = await (await fetch(url)).arrayBuffer(); return new Type(b); }
+export const LOAD = { got: 0, total: 18.9e6, onprog: null };
+async function bin(url, Type) {
+  const r = await fetch(url); if (!r.ok) throw new Error(url + ' ' + r.status);
+  const len = +r.headers.get('Content-Length') || 0, rd = r.body && r.body.getReader();
+  if (!rd || !len) { const b = await r.arrayBuffer(); LOAD.got += b.byteLength; LOAD.onprog && LOAD.onprog(); return new Type(b); }
+  const buf = new Uint8Array(len); let off = 0;
+  for (;;) { const { done, value } = await rd.read(); if (done) break; buf.set(value, off); off += value.length; LOAD.got += value.length; LOAD.onprog && LOAD.onprog(); }
+  return new Type(buf.buffer);
+}
 
 export async function loadAll() {
   const [meta, sites, eph, hr, hc, ter, terc, slr, slc] = await Promise.all([
@@ -82,8 +90,21 @@ export function siteState(s, t) {
 // Full hourly series for the whole ephemeris (cached): sun fraction (uint8 0..250), earth visible (0/1)
 export function series(s) {
   if (s.series) return s.series;
-  const sun = new Uint8Array(D.T), earth = new Uint8Array(D.T), sel = new Float32Array(D.T), eel = new Float32Array(D.T);
-  for (let t = 0; t < D.T; t++) { const st = siteState(s, t); sun[t] = Math.round(st.sun * 250); earth[t] = st.earth; sel[t] = st.sel; eel[t] = st.eel; }
+  const T = D.T, E = D.ephem, F = s.F, P = s.pos, prof = s.prof, naz = s.naz, k = naz / 360, R2D = 180 / Math.PI;
+  const sun = new Uint8Array(T), earth = new Uint8Array(T), sel = new Float32Array(T), eel = new Float32Array(T);
+  const hz = az => { const f = az * k, i = Math.floor(f), w = f - i, i0 = i % naz; return prof[i0] * (1 - w) + prof[(i0 + 1) % naz] * w; };
+  for (let t = 0, o = 0; t < T; t++, o += 6) {
+    // Sun (direction)
+    let x = E[o], y = E[o + 1], z = E[o + 2];
+    let u = x * F[0] + y * F[1] + z * F[2], mx = x * F[3] + y * F[4] + z * F[5], my = x * F[6] + y * F[7] + z * F[8];
+    let el = Math.atan2(u, Math.sqrt(mx * mx + my * my)) * R2D, az = Math.atan2(mx, my) * R2D; if (az < 0) az += 360;
+    const sf = (el - hz(az)) / (2 * SUN_R) + .5; sun[t] = sf <= 0 ? 0 : sf >= 1 ? 250 : Math.round(sf * 250); sel[t] = el;
+    // Earth (position minus site position: topocentric)
+    x = E[o + 3] - P[0]; y = E[o + 4] - P[1]; z = E[o + 5] - P[2];
+    u = x * F[0] + y * F[1] + z * F[2]; mx = x * F[3] + y * F[4] + z * F[5]; my = x * F[6] + y * F[7] + z * F[8];
+    el = Math.atan2(u, Math.sqrt(mx * mx + my * my)) * R2D; az = Math.atan2(mx, my) * R2D; if (az < 0) az += 360;
+    earth[t] = el > hz(az) ? 1 : 0; eel[t] = el;
+  }
   return (s.series = { sun, earth, sel, eel });
 }
 

@@ -150,6 +150,20 @@ export function selectSite(id, fly = true) {
 }
 
 export function pick(x, y, name) {
+  // Re-select if clicking within 400m of an existing site
+  const existing = allSites().find(s => Math.hypot(s.x - x, s.y - y) < 400);
+  if (existing) {
+    selectSite(existing.id, true);
+    toast(`Selected ${existing.name}`);
+    return;
+  }
+
+  // Prevent scene clutter: keep maximum 8 custom sites
+  const customSites = allSites().filter(s => s.custom);
+  if (customSites.length >= 8) {
+    removeCustom(customSites[0]);
+  }
+
   const s = addCustom(x, y, name);
   if (!s) return toast('Location lies outside analyzed terrain region');
   toast(`Added ${s.name} at ${Math.abs(s.lat).toFixed(3)}°S, ${s.lon.toFixed(1)}°E`);

@@ -65,26 +65,42 @@ export function runWindows() {
     .sort((a, b) => !a.r.picked[0] ? 1 : !b.r.picked[0] ? -1 : rankWin(a.r.picked[0], b.r.picked[0]));
   const best = res.find(x => x.r.picked.length);
 
+  const scopeLabel = $('wSites').value === 'all'
+    ? 'All 13 Landing Locations'
+    : $('wSites').value === 'artemis'
+      ? 'NASA Artemis III Candidate Regions'
+      : (site()?.name || 'Selected Location');
+
   let h = best ? (() => {
     const w = best.r.picked[0], d = tDate(w.a);
     return `
       <div class="winner-card">
-        <div class="winner-card-tag">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          Optimal Landing Window
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div class="winner-card-tag">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Recommended Landing Window
+          </div>
+          <span style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);">${scopeLabel}</span>
         </div>
         <div class="winner-card-title">${best.s.name} · Landing ${d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}</div>
         <div class="winner-card-body">
-          Over the ${c.days}-day mission, the Sun is visible <b>${pct(w.sun)}</b> of the time and Earth is geometrically visible <b>${pct(w.earth)}</b> of the time. Longest continuous night: <b>${hrs(w.maxDark)}</b>.
-          ${w.margin > 0 ? `<br><span style="color:var(--safe-green)">Sun/Earth angular clearance: ${w.margin.toFixed(1)}° above local ridges.</span>` : ''}
+          <p style="margin:4px 0 8px 0;color:var(--text-primary);font-size:12px;line-height:1.45;">
+            <b>Why this window ranks #1:</b> Provides ${pct(w.sun)} continuous sunlight for solar power generation and ${pct(w.earth)} direct radio line-of-sight to Earth across the entire ${c.days}-day mission sortie, with continuous night limited to ${hrs(w.maxDark)}.
+          </p>
+          <div style="display:flex;gap:12px;background:var(--obsidian-surface-3);padding:8px 12px;border-radius:var(--radius-sm);margin-bottom:8px;font-size:11px;">
+            <div><span style="color:var(--text-muted);display:block;font-size:10px;">MISSION SUNLIGHT (${c.days}d)</span><b>${pct(w.sun)}</b></div>
+            <div><span style="color:var(--text-muted);display:block;font-size:10px;">DIRECT EARTH COMMS</span><b>${pct(w.earth)}</b></div>
+            <div><span style="color:var(--text-muted);display:block;font-size:10px;">LONGEST NIGHT</span><b>${hrs(w.maxDark)}</b></div>
+            <div><span style="color:var(--text-muted);display:block;font-size:10px;">TERRAIN CLEARANCE</span><b>${w.margin > 0 ? w.margin.toFixed(1) + '°' : 'Horizon limit'}</b></div>
+          </div>
           <div style="margin-top:8px;">
-            <button id="goBest" class="primary-action" style="padding:5px 12px;font-size:11px;">Inspect This Date in 3D →</button>
+            <button id="goBest" class="primary-action" style="padding:6px 14px;font-size:11px;">Inspect This Date in 3D Viewport →</button>
           </div>
         </div>
       </div>
-      <p class="hint" style="margin-top:8px;">Click any row below to jump the simulation to that landing date.</p>
+      <p class="hint" style="margin-top:10px;margin-bottom:4px;">Alternative viable landing dates ranked below. Click any row to jump the 3D simulation to that date.</p>
     `;
-  })() : '<div class="winner-card" style="border-color:var(--alert-red);"><p style="color:var(--alert-red);margin:0;">No landing window satisfied all constraints. Try selecting a shorter mission length or relaxed darkness limits.</p></div>';
+  })() : `<div class="winner-card" style="border-color:var(--alert-red);"><p style="color:var(--alert-red);margin:0;">No landing window satisfied all constraints within ${scopeLabel}. Try selecting a shorter mission length or relaxed darkness limits.</p></div>`;
 
   res.forEach(({ s, r }, i) => {
     h += `<div class="winSite" style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">

@@ -87,10 +87,13 @@ void main() {
   bool inCore = abs(vM.x) < coreHalf * 0.995 && abs(vM.y) < coreHalf * 0.995;
   if (isCore == 0 && inCore) discard;
 
-  // Circular aperture cutoff: discard rectangular corners of regional DEM outside 188 km radius
+  // Smooth squircle aperture cutoff: discard rectangular corners of regional DEM beyond 191.8 km
+  // Seamlessly accommodates all 13 NASA candidate regions (including Peak near Cabeus B at 194.9 km)
   if (isCore == 0) {
-    float r = length(vM);
-    if (r > 188000.0) discard;
+    float qx = abs(vM.x) / 191800.0;
+    float qy = abs(vM.y) / 191800.0;
+    float squircle = qx*qx*qx*qx*qx*qx*qx*qx + qy*qy*qy*qy*qy*qy*qy*qy;
+    if (squircle > 1.0) discard;
   }
 
   float hh = isCore == 1 ? coreHalf : regHalf;
@@ -199,7 +202,7 @@ function buildMesh(heights, half, n, isCore) {
 function buildGlobe() {
   const nr = 40; // radial rings
   const na = 96; // angular segments
-  const rMin = 175.0; // km (overlaps with regional DEM boundary)
+  const rMin = 140.0; // km (overlaps beneath regional DEM boundary)
   const rMax = 750.0; // km (curves downward to form lunar limb)
 
   const numVerts = (nr + 1) * (na + 1);
@@ -276,11 +279,16 @@ function applyHeights(m) {
     const y = mxy[k * 2 + 1];
     let h = heights[k];
 
-    // Smooth edge taper for regional DEM (r = 160 km to 186 km) down to spherical datum
+    // Smooth edge taper only at the absolute squircle boundary (> 0.96) to blend into lunar globe
+    // Preserves 100% of authentic NASA LOLA terrain elevations across all candidate regions
     if (!isCore) {
-      const r = Math.hypot(x, y);
-      if (r > 160000) {
-        const t = Math.max(0, Math.min(1, (186000 - r) / (186000 - 160000)));
+      const qx = Math.abs(x) / 191800.0;
+      const qy = Math.abs(y) / 191800.0;
+      const qx4 = qx * qx * qx * qx;
+      const qy4 = qy * qy * qy * qy;
+      const sq = qx4 * qx4 + qy4 * qy4;
+      if (sq > 0.96) {
+        const t = Math.max(0, Math.min(1, (1.0 - sq) / (1.0 - 0.96)));
         const smooth = t * t * (3 - 2 * t);
         h *= smooth;
       }
@@ -389,17 +397,41 @@ export function initScene(el, pick) {
   });
   ro.observe(el);
 
-  // Click vs Drag detection
-  let down = null;
-  renderer.domElement.addEventListener('pointerdown', e => down = [e.clientX, e.clientY]);
+  // Click vs Drag detection with strict movement, duration, and target filtering
+  let downPos = null;
+  let downTime = 0;
+  let downBtn = 0;
+
+  renderer.domElement.addEventListener('pointerdown', e => {
+    downPos = [e.clientX, e.clientY];
+    downTime = performance.now();
+    downBtn = e.button;
+  });
+
   renderer.domElement.addEventListener('pointerup', e => {
-    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 4) return;
+    if (!downPos || downBtn !== 0) return;
+    const moveDist = Math.hypot(e.clientX - downPos[0], e.clientY - downPos[1]);
+    const duration = performance.now() - downTime;
+    downPos = null;
+
+    // Distinguish intentional click from camera drag / orbit:
+    // Drag threshold 8px, maximum click duration 350ms
+    if (moveDist > 8 || duration > 350) return;
+
+    // Ensure click occurred directly on the 3D canvas and not through UI overlays
+    if (e.target !== renderer.domElement) return;
+
     const r = renderer.domElement.getBoundingClientRect();
-    raycaster.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), camera);
+    raycaster.setFromCamera(
+      new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1),
+      camera
+    );
     const hit = raycaster.intersectObjects([meshC, meshR])[0];
     if (hit) {
       const x = hit.point.x * 1000;
       const y = -hit.point.z * 1000;
+      // Reject points outside analyzed LOLA terrain region
+      if (Math.abs(x) > 190000 || Math.abs(y) > 190000) return;
       if (!(hit.object === meshR && Math.abs(x) < 39800 && Math.abs(y) < 39800)) {
         onPick && onPick(x, y);
       }
@@ -539,17 +571,17 @@ export function setMarkers(sites, selId, onSel) {
     const on = s.id === selId;
 
     const pin = new THREE.Mesh(
-      new THREE.CylinderGeometry(on ? 0.35 : 0.22, 0.05, 6, 8),
+      new THREE.CylinderGeometry(on ? 0.28 : 0.18, 0.04, 1.8, 8),
       new THREE.MeshBasicMaterial({ color: on ? 0xE9E7E1 : 0x8A8D98 })
     );
-    pin.position.set(s.x / 1000, y + 3, -s.y / 1000);
+    pin.position.set(s.x / 1000, y + 0.9, -s.y / 1000);
     markers.add(pin);
 
     const l = document.createElement('div');
     l.className = 'lbl' + (on ? ' on' : '');
     l.textContent = s.name;
     l.onclick = () => onSel(s.id);
-    l._p = new THREE.Vector3(s.x / 1000, y + 6.5, -s.y / 1000);
+    l._p = new THREE.Vector3(s.x / 1000, y + 2.5, -s.y / 1000);
     box.appendChild(l);
     labelEls.push(l);
   }
@@ -558,7 +590,7 @@ export function setMarkers(sites, selId, onSel) {
     const l = document.createElement('div');
     l.className = 'lbl geo';
     l.textContent = txt;
-    l._p = new THREE.Vector3(x / 1000, sceneY(x, y, heightAt(x, y)) + 3, -y / 1000);
+    l._p = new THREE.Vector3(x / 1000, sceneY(x, y, heightAt(x, y)) + 1.8, -y / 1000);
     box.appendChild(l);
     labelEls.push(l);
   }
@@ -691,6 +723,7 @@ export function flyTo(s, standing, look = 'sun') {
   const y = sceneY(s.x, s.y, s.elev);
   const tgt = new THREE.Vector3(s.x / 1000, y, -s.y / 1000);
   let pos;
+  let targetLook = tgt.clone();
 
   if (standing) {
     const sd = (look === 'earth' ? earthSpr.position.clone().normalize() : U.sunDir.value.clone()).setY(0).normalize();
@@ -704,11 +737,33 @@ export function flyTo(s, standing, look = 'sun') {
     controls.minDistance = 6.0;
     controls.maxDistance = 420.0;
     controls.maxPolarAngle = Math.PI * 0.48;
-    controls.target.copy(tgt);
 
-    const off = camera.position.clone().sub(tgt);
-    off.setLength(s.custom ? 28 : 42);
-    if (off.y < 12) off.y = 16;
+    const rDist = Math.hypot(tgt.x, tgt.z);
+    const camSpan = s.custom ? 32 : (rDist > 120 ? 52 : 42);
+    const elevBoost = Math.max(0, (s.elev || 0) / 1000) * 0.5;
+    targetLook = tgt.clone().add(new THREE.Vector3(0, 0.4 + elevBoost * 0.2, 0));
+    controls.target.copy(targetLook);
+
+    let off;
+    if (rDist > 20) {
+      // For regional and perimeter sites (e.g. Peak near Cabeus B at 195km, Mons Mouton at 139km),
+      // position camera radially outward and looking back inward toward the site and the South Pole,
+      // ensuring the Moon's peaks, craters, and curved horizon fill the entire view!
+      const nx = tgt.x / rDist;
+      const nz = tgt.z / rDist;
+      const radLen = camSpan * 0.82;
+      const tanLen = camSpan * 0.28;
+      const camY = Math.max(16, 18 + elevBoost);
+      off = new THREE.Vector3(
+        nx * radLen - nz * tanLen,
+        camY,
+        nz * radLen + nx * tanLen
+      );
+    } else {
+      off = camera.position.clone().sub(tgt);
+      off.setLength(camSpan);
+      if (off.y < 14) off.y = 16;
+    }
     pos = tgt.clone().add(off);
   }
 
@@ -720,7 +775,7 @@ export function flyTo(s, standing, look = 'sun') {
     const k = Math.min(1, (performance.now() - t0) / 800);
     const e = k * k * (3 - 2 * k);
     camera.position.lerpVectors(p0, pos, e);
-    if (!standing) controls.target.lerpVectors(l0, tgt, e);
+    if (!standing) controls.target.lerpVectors(l0, targetLook, e);
     if (k < 1) requestAnimationFrame(anim);
   })();
 }

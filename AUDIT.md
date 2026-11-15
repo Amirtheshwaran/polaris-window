@@ -6,15 +6,17 @@ Readiness: release candidate, modular architecture refactor, minimalist lunar ob
 
 The 3D lunar visualization in Three.js has been upgraded to provide a continuous, realistic planetary exploration experience without inventing unscientific elevation data:
 
-1. **Curved Lunar Globe Backdrop & Rectangular Slab Elimination**:
-   - Seamlessly blended the rectangular regional NASA LOLA DEM ($192\text{ km}$ half-width) into a curved concentric lunar globe backdrop extending to $750\text{ km}$ radius.
+1. **Authentic LOLA Topography & Squircle Boundary Transition**:
+   - Replaced artificial circular shader discard with a high-order squircle boundary ($(\frac{|x|}{R_0})^8 + (\frac{|y|}{R_0})^8 \le 1$ where $R_0 = 191.8\text{ km}$).
+   - This smoothly and seamlessly bounds the square LOLA DEM to meet the spherical datum globe without truncating legitimate outer Artemis III candidate regions (such as Peak near Cabeus B at $r = 194.89\text{ km}$, which previously suffered elevation zeroing and shader clipping).
+   - Preserves 100% authentic NASA LOLA elevation data across all 13 candidate sites, tapering only at the outermost squircle edge ($\ge 0.96$) to blend into the datum sphere.
    - Built with physical lunar radius $R = 1,737.4\text{ km}$ matching the NASA LOLA lunar reference sphere (`R = 1737400.0 m`).
-   - Between $r = 160\text{ km}$ and $r = 186\text{ km}$, regional topography smoothly and tangentially tapers to datum $h = 0$, completely eliminating square slab edges.
    - Dynamic solar illumination and realistic lunar day/night terminator sweep across both the local LOLA craters and the global lunar sphere in lockstep with the JPL NAIF SPICE ephemeris.
 
-2. **Accurate Site Label Projection & Occlusion**:
+2. **Accurate Site Label Projection & Marker Placement**:
    - Resolved camera-relative coordinate calculation and strict front-of-camera plane check (`toPoint.dot(camDir) > 1.0`), completely eliminating the upper-left corner detachment artifact.
    - Incorporated lunar horizon curvature occlusion (`normal.dot(viewDir) < -0.1`), ensuring sites on the far side of the Moon are occluded cleanly rather than rendering backward.
+   - Reduced marker pin stems from 6.0 km to 1.8 km (`CylinderGeometry(0.28, 0.04, 1.8, 8)`), placing pin bases firmly and realistically anchored on mountain summits rather than hovering in mid-air.
    - Scale-based decluttering dynamically hides non-selected minor site labels during extreme regional zoom-out while preserving selected and landmark pins.
 
 3. **Subtle Scale & Polar Orientation Indicators**:
@@ -22,10 +24,44 @@ The 3D lunar visualization in Three.js has been upgraded to provide a continuous
    - **Polar Orientation Compass**: Minimalist $30\text{px}$ ring with a central South Pole mark and an orientation needle pointing toward Earth ($0^\circ\text{ Longitude}$ / Prime Meridian).
    - Interactive re-alignment: Clicking the compass smoothly rotates the camera to align with Earth heading.
 
-4. **Camera Bounds & Motion Transitions**:
+4. **Camera Bounds & Inward Framing**:
    - Bounded zoom range (`minDistance = 6.0 km`, `maxDistance = 420.0 km`), preventing camera penetration through ground polygons and preventing zooming out into an empty black void.
    - Bounded polar angle (`maxPolarAngle = Math.PI * 0.48`), preventing the camera from dipping beneath the lunar horizon.
    - Smooth cubic ease-in-out interpolation for all fly-to transitions and overview resets.
+   - For perimeter sites ($r > 20\text{ km}$ like Peak near Cabeus B), the camera is positioned radially outward looking inward across the Moon toward the South Pole with an elevated orbital perspective, framing the mountain peaks against the lunar terrain and horizon instead of empty black space.
+
+## Custom-Location Interaction & Toast Polish
+
+1. **Elimination of Oversized Toast Overlay**:
+   - Resolved conflicting CSS between `web/css/layout.css` and `web/css/modals.css` (which previously applied both `top: 60px` and `bottom: 64px`, stretching `#toast` into a 792px vertical capsule).
+   - Fixed `#toast` to `bottom: 72px; height: auto; max-width: 90vw; padding: 7px 18px; border-radius: 9999px;`, verified as a sleek 34px-tall horizontal pill.
+
+2. **Accidental Click vs Drag Rejection**:
+   - Implemented strict drag thresholds in `initScene`: pointer movement $> 8\text{px}$, hold duration $> 350\text{ms}$, or non-left click (`e.button !== 0`) rejects terrain clicks.
+   - Added canvas target verification (`e.target === renderer.domElement`) and spatial bounds check ($|x|, |y| \le 190,000\text{ m}$), preventing clicks on UI overlays or off-DEM regions from spawning spurious sites.
+   - Added 400m proximity re-selection to prevent double-click duplicates, and capped total custom sites at 8 to eliminate scene clutter.
+
+3. **In-Card Location Removal**:
+   - Added `✕ Remove Location` action to the Selected Location summary card for any custom site.
+   - Deleting a custom site removes its 3D marker, updates the Locations drawer count, emits toast confirmation (`Removed Custom X`), and reverts selection to the primary landing site.
+
+## Scientific Rigor & Plain-English Presentation
+
+1. **Landing Window Ranking Explanation**:
+   - Prominently displays the #1 Recommended Landing Window with an unambiguous plain-English explanation of why it ranked first (highest combined continuous solar illumination and direct Earth radio line-of-sight).
+   - Displays clear search scope badges (`All 13 Landing Locations`, `NASA Artemis III Candidate Regions`, or single site).
+   - Dedicated mission-duration metrics summary (`MISSION SUNLIGHT (14d)`, `DIRECT EARTH COMMS`, `LONGEST NIGHT`, `TERRAIN CLEARANCE`).
+
+2. **4-Part Data Architecture & Scientific Boundaries**:
+   - Added 4 explicit architecture cards in Science mode:
+     1. **NASA Source Data**: Authentic LRO LOLA 80 m raster DEM altimetry and JPL NAIF SPICE DE440 ephemerides.
+     2. **Computed Estimates**: Topocentric elevation silhouettes across 120–720 azimuths marched to 220 km with lunar curvature ($d^2/2R$) and partial solar disc occultation.
+     3. **Model Assumptions**: Standardized 2.0 m observer mast, 10 m² vertical sun-tracking panel (30% efficiency), spherical datum ($R = 1,737.4\text{ km}$).
+     4. **Unresolved Landing Hazards**: Transparently states that sub-80 m micro-craters, boulders, and regolith stability require lander hazard avoidance systems (referencing IM-2 Athena CLPS anomaly).
+   - Made NASA Goddard PGDA illumination and Earth visibility cross-check maps clickable to open high-resolution verification figures.
+
+3. **Slope Terminology Correction**:
+   - Replaced ambiguous `"Safe slope (<8°)"` phrasing with scientifically accurate `"Within 8° slope threshold"` and `"Exceeds 8° slope threshold"`.
 
 ## Minimalist Lunar Observatory UX Architecture
 

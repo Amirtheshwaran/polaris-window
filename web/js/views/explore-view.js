@@ -3,7 +3,8 @@
 // ==========================================================================
 
 import { $, $$, ST, site } from '../state.js';
-import { D, siteState, stats, series, SAFE_SLOPE, pct, hrs } from '../data.js';
+import { D, siteState, stats, series, SAFE_SLOPE, pct, hrs, removeCustom, allSites } from '../data.js';
+import { selectSite } from '../site-selector.js';
 import * as SC from '../scene.js';
 import { drawPano, drawStrip } from '../pano.js';
 import { toast } from '../ui-components.js';
@@ -129,12 +130,23 @@ export function renderSiteTab() {
   if ($('metricSlopeValue')) {
     if (s.slope != null) {
       $('metricSlopeValue').textContent = `${s.slope}°`;
-      $('metricSlopeSub').textContent = s.slope <= SAFE_SLOPE ? `Safe slope (<${SAFE_SLOPE}°)` : `Steep slope (>${SAFE_SLOPE}°)`;
+      $('metricSlopeSub').textContent = s.slope <= SAFE_SLOPE ? `Within ${SAFE_SLOPE}° slope threshold` : `Exceeds ${SAFE_SLOPE}° slope threshold`;
       $('metricSlopeSub').style.color = 'var(--text-muted)';
     } else {
       $('metricSlopeValue').textContent = '–';
       $('metricSlopeSub').textContent = 'DEM Boundary';
     }
+  }
+
+  const delBtn = $('deleteCustomSiteBtn');
+  if (delBtn) {
+    delBtn.style.display = s.custom ? '' : 'none';
+    delBtn.onclick = () => {
+      removeCustom(s);
+      toast(`Removed ${s.name}`);
+      const fallback = allSites()[0];
+      if (fallback) selectSite(fallback.id, true);
+    };
   }
 
   if ($('verdict')) $('verdict').innerHTML = verdict(s, m, st);

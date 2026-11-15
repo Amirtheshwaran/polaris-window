@@ -160,17 +160,20 @@ main#app-shell {
 
 #toast {
   position: fixed;
-  bottom: 64px;
+  bottom: 72px;
   left: 50%;
   transform: translateX(-50%);
   background: var(--obsidian-surface-3);
   color: var(--lunar-white);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-pill);
-  padding: 6px 16px;
+  padding: 7px 18px;
   font-size: 12px;
   font-weight: 500;
-  box-shadow: var(--shadow-panel);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
   z-index: 1000;
   pointer-events: none;
+  max-width: 90vw;
+  height: auto;
+  white-space: nowrap;
 }

@@ -160,13 +160,23 @@ export function setMarkers(sites, selId, onSel) {
     const l = document.createElement('div'); l.className = 'lbl geo'; l.textContent = txt;
     l._p = new THREE.Vector3(x / 1000, sceneY(x, y, heightAt(x, y)) + 3, -y / 1000); box.appendChild(l); labelEls.push(l);
   }
+  const pri = l => l.classList.contains('on') ? 0 : l.classList.contains('geo') ? 2 : 1;
+  labelEls.sort((a, b) => pri(a) - pri(b));
 }
+// Labels are drawn in priority order (selected site, sites, then map labels); a label that would overlap one already drawn is hidden
 function updateLabels() {
-  const r = renderer.domElement.getBoundingClientRect();
+  const r = renderer.domElement.getBoundingClientRect(), placed = [];
   for (const l of labelEls) {
-    const p = l._p.clone().project(camera), vis = p.z < 1 && Math.abs(p.x) < 1.05 && Math.abs(p.y) < 1.05 && !(standingMode && l.classList.contains('geo'));
+    const p = l._p.clone().project(camera);
+    let vis = p.z < 1 && Math.abs(p.x) < 1.05 && Math.abs(p.y) < 1.05 && !(standingMode && l.classList.contains('geo'));
+    if (vis) {
+      const x = r.left + (p.x + 1) / 2 * r.width, y = r.top + (1 - p.y) / 2 * r.height;
+      if (l.offsetWidth) l._w = l.offsetWidth;
+      const w = l._w || 90, box = [x - w / 2 - 2, y - 30, x + w / 2 + 2, y - 8];
+      if (placed.some(q => box[0] < q[2] && box[2] > q[0] && box[1] < q[3] && box[3] > q[1])) vis = false;
+      else { placed.push(box); l.style.left = x + 'px'; l.style.top = y + 'px'; }
+    }
     l.style.display = vis ? '' : 'none';
-    if (vis) { l.style.left = (r.left + (p.x + 1) / 2 * r.width) + 'px'; l.style.top = (r.top + (1 - p.y) / 2 * r.height) + 'px'; }
   }
 }
 

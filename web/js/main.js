@@ -306,6 +306,7 @@ const TOUR = [
   ['The green boxes are NASA\'s nine Artemis III candidate landing regions, using official USGS boundaries. Inside each one, we found the flat spot with the most sunlight and Earth contact.', () => { play(false); SC.overview(); }],
   ['The Connecting Ridge sits in sunlight about 90% of the time. Planners want this: near-continuous solar power next to the ice.', () => { play(false); switchTab('site'); selectSite('ridge'); }],
   ['Stand at the site: the panorama shows the real horizon, the Sun path (gold) and Earth path (blue) for the next month. When Earth dips behind the terrain, direct-to-Earth comms go dark.', () => { const s = site(); SC.setExag(1); SC.flyTo(s, true); }],
+  ['Can your lander survive the lunar night? Pick a solar panel, a battery and how much power you use, and we simulate the battery hour by hour with the real sunlight here.', () => { SC.setExag(3); SC.overview(); switchTab('site'); selectSite('a3_malapert_massif', false); ST.t = tIndex(Date.parse('2027-04-10T00:00Z')); update(); setTimeout(() => document.querySelector('.surv').scrollIntoView({ behavior: 'smooth' }), 300); }],
   ['Heatmap mode colors the whole region by how often it is sunlit over any date range.', () => { switchTab('heat'); runHeat({ metric: 'sun', from: '2027-01-01', to: '2027-12-31' }); SC.setExag(3); SC.overview(); }],
   ['Compare sites side by side: sunlight, Earth visibility and the longest blackout, month by month.', () => switchTab('compare')],
   ['Planner mode: give it a mission length and power/comms limits, and the window finder ranks every possible landing date.', () => { setMode('planner'); switchTab('windows'); runWindows(); }],
@@ -364,6 +365,13 @@ function demo() {
   $('time').oninput = e => { ST.t = +e.target.value; update(); };
   $('timeInput').onchange = e => { ST.t = tIndex(Date.parse(e.target.value + 'Z')); update(); };
   $('play').onclick = () => play();
+  const step = h => { ST.t = Math.max(0, Math.min(D.T - 1, ST.t + h)); update(); };
+  $('tBack').onclick = () => step(-24); $('tFwd').onclick = () => step(24);
+  addEventListener('keydown', e => {
+    if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName) && document.activeElement.type !== 'range') return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); step((e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 24 : 1)); }
+    else if (e.key === ' ' && document.activeElement === document.body) { e.preventDefault(); play(); }
+  });
   $('trust').onclick = e => { e.preventDefault(); switchTab('valid'); };
   $('briefBtn').onclick = missionBrief;
   ['svPanel', 'svBatt', 'svLoad', 'svDays'].forEach(id => $(id).oninput = survival);

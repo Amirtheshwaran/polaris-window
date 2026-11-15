@@ -91,3 +91,4 @@ body.planner .stats{grid-template-columns:repeat(3,1fr)}
 #siteList li:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 @media (max-width:1000px){.hdr-actions .btnlink{font-size:12px;padding:4px 7px}}
 .surv{margin-top:12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:4px 12px 10px}.surv h3{color:var(--sun);text-transform:none;letter-spacing:0;font-size:15px}.surv .row b{font-size:12px;min-width:150px;text-align:right}#svChart{width:100%;border-radius:6px;margin-top:6px}.winner.bad{border-color:var(--bad);background:linear-gradient(90deg,#2a0a0a,#0b1220)}
+#tBack,#tFwd{padding:4px 6px;font-size:12px}

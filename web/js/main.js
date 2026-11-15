@@ -31,7 +31,7 @@ function writeHash() {
 
 // ------------------------------------------------------------- render pieces
 function renderSiteList() {
-  const li = s => `<li data-id="${s.id}" class="${s.id === ST.site ? 'on' : ''}"><span>${s.name}<br><small>${s.lat.toFixed(2)}°, ${s.lon.toFixed(1)}°E</small></span>${s.custom ? '<span class="x" title="Remove">✕</span>' : ''}</li>`;
+  const li = s => `<li data-id="${s.id}" tabindex="0" role="button" aria-pressed="${s.id === ST.site}" class="${s.id === ST.site ? 'on' : ''}"><span>${s.name}<br><small>${s.lat.toFixed(2)}°, ${s.lon.toFixed(1)}°E</small></span>${s.custom ? '<span class="x" title="Remove">✕</span>' : ''}</li>`;
   const A = allSites().filter(s => s.artemis), O = allSites().filter(s => !s.artemis && !s.custom && !s.clps), K = allSites().filter(s => s.clps), C = allSites().filter(s => s.custom);
   $('siteList').innerHTML = `<li class="grp">🚀 NASA Artemis III candidate regions</li>${A.map(li).join('')}<li class="grp">🔬 Science sites</li>${O.map(li).join('')}<li class="grp">🛬 Real CLPS landings</li>${K.map(li).join('')}${C.length ? '<li class="grp">📍 Your sites</li>' + C.map(li).join('') : ''}`;
   SC.setMarkers(allSites(), ST.site, selectSite); SC.setRegions(allSites(), ST.site);
@@ -66,7 +66,7 @@ function renderSiteTab() {
   $('overBtn').onclick = e => { e.preventDefault(); SC.overview(); };
   drawPano($('pano'), s, ST.t); drawStrip($('siteStrip'), s, ST.t, ST.mission && ST.mission.t === ST.t && ST.mission.site === s.id ? ST.mission.days : 0);
   const m = stats(s, ST.t, Math.min(D.T, ST.t + 24 * 365));
-  $('verdict').innerHTML = verdict(s, m, st);
+  $('verdict').innerHTML = verdict(s, m, st); survival();
   $('siteStats').innerHTML = stat('☀️ ' + pct(m.sun), 'of the time in sunlight (next 12 months)') + stat('🌍 ' + pct(m.earth), 'of the time Earth is in view (radio home)') + stat('🌑 ' + hrs(m.maxDark), 'longest night (no solar power)') +
     stat('📵 ' + hrs(m.maxBlk), 'longest time without Earth (comms blackout)') + stat(pct(m.both), 'sun AND Earth together', 'planner-only') + stat('⚡ ' + Math.round(m.powerW) + ' W', 'average power from a 10 m² solar panel', 'planner-only') +
     (s.validation ? stat(pct(s.validation.ours) + ' / ' + pct(s.validation.nasa), 'ours vs NASA map, 2009–13', 'planner-only') : '') +
@@ -246,6 +246,7 @@ function missionBrief() {
   <h2>Landing</h2><p><b>${fmtDate(d0)}</b>, ${days}-day mission · lat ${s.lat.toFixed(4)}°, lon ${s.lon.toFixed(4)}°E · elevation ${(s.elev / 1000).toFixed(2)} km${s.slope != null ? ` · slope ${s.slope}°` : ''}<br><span class="m">${s.note}</span></p>
   <div class="g"><div><b>${pct(m.sun)}</b>sunlight</div><div><b>${pct(m.earth)}</b>Earth in view (DTE comms)</div><div><b>${hrs(m.maxDark)}</b>longest darkness</div><div><b>${hrs(m.maxBlk)}</b>longest comms blackout</div>
   <div><b>${pct(m.both)}</b>sun AND Earth</div><div><b>${margin > 0 ? margin.toFixed(1) + '°' : 'none'}</b>safety margin (lowest Sun/Earth clearance)</div><div><b>${(m.energyKWh).toFixed(0)} kWh</b>energy, 10 m² array at 30%</div><div><b>${Math.round(m.powerW)} W</b>average power</div></div>
+  <h2>Power survival check</h2><p>${$('svOut').innerText} <span class="m">(${$('svPanelV').textContent} solar panel, ${$('svBattV').textContent} battery, ${$('svLoadV').textContent} load, starting at landing.)</span></p>
   <h2>Horizon panorama (Sun path gold, Earth path blue, next 29.5 days)</h2><img src="${pano}" alt="Horizon panorama">
   <h2>Next 60 days (gold = sunlit, blue = Earth in view)</h2><img src="${strip}" alt="60-day strip">
   <h2>Day by day</h2><table><tr><th></th><th>Date (UTC)</th><th>Sun visible</th><th>Earth visible</th><th>Sun elevation range</th><th>Status</th></tr>${rows}</table>
@@ -253,6 +254,25 @@ function missionBrief() {
   Validation: sunlight map vs NASA PGDA r = ${v.grids.core.r.toFixed(3)}${v.earth ? `; Earth-visibility map vs NASA r = ${v.earth.grids.core.r.toFixed(3)}` : ''}; Sun/Earth elevation vs JPL Horizons within ${v.horizons ? v.horizons.max_abs_diff_deg.toFixed(4) : '0.001'}°.
   Hazards smaller than 80 m (rocks, small craters) are not resolved.</p></body></html>`);
   w.document.close();
+}
+// Lander survival: hourly battery simulation driven by the site's real sunlight (vertical sun-tracking panel, 30% efficient)
+function survival() {
+  const s = site(), ser = series(s), P = +$('svPanel').value, B = +$('svBatt').value, L = +$('svLoad').value, days = +$('svDays').value;
+  $('svPanelV').textContent = `${P} m² (${Math.round(P * 1361 * .3)} W in full sun)`; $('svBattV').textContent = `${B} kWh`; $('svLoadV').textContent = `${L} W`; $('svDaysV').textContent = `${days} days`;
+  const a = ST.t, n = Math.min(D.T - a, days * 24), soc = new Float32Array(n + 1); let e = B * 1000, dead = -1, minE = e; soc[0] = 1;
+  for (let k = 0; k < n; k++) {
+    e = Math.min(B * 1000, e + P * 1361 * .3 * ser.sun[a + k] / 250 - L);
+    if (e <= 0 && dead < 0) dead = k; e = Math.max(0, e); minE = Math.min(minE, e); soc[k + 1] = e / (B * 1000);
+  }
+  $('svOut').innerHTML = dead < 0
+    ? `<div class="winner">✅ <b>Your lander survives all ${days} days!</b> Lowest battery: ${Math.round(minE / (B * 10))}%.</div>`
+    : `<div class="winner bad">❌ <b>The battery runs out on day ${Math.floor(dead / 24) + 1}</b> (${fmtDate(tDate(a + dead))}). Try a bigger battery or solar panel, use less power, or pick a sunnier landing date.</div>`;
+  const cv = $('svChart'), dpr = devicePixelRatio || 1, W = cv.width = cv.clientWidth * dpr, H = cv.height = 90 * dpr, g = cv.getContext('2d');
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  for (let k = 0; k < n; k++) { g.fillStyle = `rgba(251,191,36,${ser.sun[a + k] / 250 * .35})`; g.fillRect(k / n * W, 0, Math.ceil(W / n) + 1, H); }
+  g.strokeStyle = dead < 0 ? '#34d399' : '#f87171'; g.lineWidth = 2 * dpr; g.beginPath();
+  for (let k = 0; k <= n; k++) { const x = k / n * W, y = H - 4 * dpr - soc[k] * (H - 8 * dpr); k ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+  g.fillStyle = '#94a3b8'; g.font = `${10 * dpr}px system-ui`; g.fillText('battery %  (gold = sunshine)', 4 * dpr, 12 * dpr);
 }
 const HEATL = { sun: 'Sunlight', earth: 'Earth visibility', both: 'Sun AND Earth', slope: 'Flat ground', land: 'Best landing spots' };
 const stars = (v, icon) => icon.repeat(Math.round(v * 5)) + '<span style="opacity:.25">' + icon.repeat(5 - Math.round(v * 5)) + '</span>';
@@ -346,6 +366,7 @@ function demo() {
   $('play').onclick = () => play();
   $('trust').onclick = e => { e.preventDefault(); switchTab('valid'); };
   $('briefBtn').onclick = missionBrief;
+  ['svPanel', 'svBatt', 'svLoad', 'svDays'].forEach(id => $(id).oninput = survival);
   $('csvBtn').onclick = () => {
     const s = site(), a = ST.t, b = Math.min(D.T, a + 24 * 365), rows = ['utc,sun_az_deg,sun_el_deg,sun_horizon_deg,sun_disc_visible_frac,earth_az_deg,earth_el_deg,earth_horizon_deg,earth_visible'];
     for (let t = a; t < b; t++) { const q = siteState(s, t); rows.push([tDate(t).toISOString().slice(0, 16) + 'Z', q.saz.toFixed(3), q.sel.toFixed(4), q.shz.toFixed(3), q.sun.toFixed(3), q.eaz.toFixed(3), q.eel.toFixed(4), q.ehz.toFixed(3), q.earth].join(',')); }
@@ -356,6 +377,7 @@ function demo() {
   $('exag').oninput = e => { $('exagV').textContent = e.target.value; SC.setExag(+e.target.value); renderSiteList(); };
   $('siteList').onclick = e => { const li = e.target.closest('li'); if (!li || !li.dataset.id) return; const s = allSites().find(x => x.id === li.dataset.id);
     if (e.target.classList.contains('x')) { removeCustom(s); if (ST.site === s.id) ST.site = 'ridge'; renderSiteList(); update(); return; } selectSite(s.id); };
+  $('siteList').onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset.id) { e.preventDefault(); e.target.click(); } };
   $$('#tabs button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
   $$('#modes button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
   $$('#layerSeg button').forEach(b => b.onclick = () => b.dataset.layer === 'heat' && !ST.heat ? (switchTab('heat'), runHeat()) : setLayer(b.dataset.layer));

@@ -48,9 +48,9 @@
     </div>
     <div id="tourBox" hidden><p id="tourText"></p><div><button id="tourPrev">‹</button><span id="tourStep"></span><button id="tourNext">Next ›</button><button id="tourEnd">✕</button></div></div>
     <div id="timeline">
-      <button id="play" title="Play / pause">▶</button>
+      <button id="play" title="Play / pause" aria-label="Play or pause time">▶</button>
       <select id="speed" title="Simulation speed"><option value="1">1 h/frame</option><option value="4" selected>4 h/frame</option><option value="12">12 h/frame</option></select>
-      <input type="range" id="time" min="0" max="1" value="0">
+      <input type="range" id="time" min="0" max="1" value="0" aria-label="Date and time">
       <input type="datetime-local" id="timeInput" step="3600">
     </div>
   </section>
@@ -86,6 +86,16 @@
           <dt>Slope</dt><dd>How tilted the ground is. Landers need gentle ground, usually less than about 8°.</dd>
         </dl>
       </details>
+      <div class="surv">
+        <h3>🔋 Will your lander survive?</h3>
+        <p class="meta">Pick your equipment. We charge the battery with the real sunlight at this site, hour by hour, starting from the date on the timeline.</p>
+        <label class="row">☀️ Solar panel <input type="range" id="svPanel" min="1" max="20" step="1" value="4"><b id="svPanelV"></b></label>
+        <label class="row">🔋 Battery <input type="range" id="svBatt" min="5" max="300" step="5" value="40"><b id="svBattV"></b></label>
+        <label class="row">💡 Power use <input type="range" id="svLoad" min="100" max="3000" step="50" value="500"><b id="svLoadV"></b></label>
+        <label class="row">🕒 Mission <input type="range" id="svDays" min="3" max="60" step="1" value="14"><b id="svDaysV"></b></label>
+        <div id="svOut"></div>
+        <canvas id="svChart" height="90"></canvas>
+      </div>
       <button id="briefBtn" class="primary" style="margin-top:10px">📄 Mission brief for this site and date (print / save as PDF)</button>
       <div class="planner-only"><button id="csvBtn">⬇ Download hourly Sun/Earth data for this site (CSV, 12 months)</button></div>
     </div>

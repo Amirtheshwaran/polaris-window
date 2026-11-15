@@ -81,6 +81,10 @@ export function initScene(el, pick) {
   onPick = pick;
   renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(2, devicePixelRatio)); el.appendChild(renderer.domElement);
+  renderer.domElement.setAttribute('aria-label', '3D map of the lunar south pole. Drag to rotate, scroll to zoom, click to add a landing site.');
+  renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); const m = document.createElement('div'); m.className = 'glLost';
+    m.innerHTML = 'The 3D view was paused by your graphics card. <button onclick="location.reload()">Reload</button><br><small>Everything else keeps working.</small>'; el.appendChild(m); });
+  renderer.domElement.addEventListener('webglcontextrestored', () => el.querySelector('.glLost')?.remove());
   scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000);
   camera = new THREE.PerspectiveCamera(45, 1, 0.01, 5000);
   camera.position.set(60, 160, 200);

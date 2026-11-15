@@ -28,7 +28,7 @@ Polaris Window is a browser-based mission planner for the lunar south pole. It u
 | **Live 3D south pole** | 384 × 384 km of NASA LOLA terrain (80 m DEM). Scrub or play the timeline and watch real shadows sweep across the craters. The shadows come from the same horizon model used in every statistic. |
 | **Stand at site** | 360° horizon panorama for any site, showing the Sun path and Earth path for the next lunation, with the current Sun and Earth drawn against the real skyline. One click drops you to the surface in 3D. |
 | **Auto window finder** | Enter a mission length and minimum sunlight, Earth visibility, darkness and blackout limits. It scores every 6-hour landing slot from 2025 to 2030 at every site and ranks the best non-overlapping windows. |
-| **Side-by-side compare** | 2 to 4 sites: sunlight %, Earth visibility %, sun AND Earth %, longest darkness, longest comms blackout and solar energy, plus charts for each lunation. |
+| **Side-by-side compare** | Compare 2 to 4 sites, or compare up to 4 landing dates at one site: sunlight %, Earth visibility %, sun AND Earth %, longest darkness, longest comms blackout and solar energy, plus charts for each lunation. |
 | **Heatmap mode** | Colors the whole region by sunlight, Earth visibility, or both, for any date range. It's computed live in the browser from 131k precomputed terrain horizons. |
 | **Drop your own site** | Click anywhere on the terrain. Custom sites get full statistics, a panorama and window ranking. |
 | **Checked against NASA** | Our sunlight map reproduces NASA PGDA's published south-pole illumination map with r = 0.990 (mean error 1.5 points), our Earth-visibility (comms) map reproduces NASA's Earth-visibility map with r = 0.992 (mean error 1.8 points), and our Sun and Earth elevations match JPL Horizons to 0.001°. |
@@ -45,7 +45,7 @@ NAIF SPICE DE440 + MOON_ME  ──┤                    ── hourly Sun/Earth
 NASA PGDA illumination maps ──┴─ pipeline/validate.py ── pixel-by-pixel validation + JPL Horizons cross-check
                                         │
                                         ▼
-                     web/data/*.bin  (static, about 18 MB)  ──►  Three.js + Chart.js app on GitHub Pages
+                     web/data/*  (static, about 10 MB download)  ──►  Three.js + Chart.js app on GitHub Pages
 ```
 
 * **Horizons:** for each grid point (two 256 × 256 grids: 1.5 km over ±192 km, 312 m over the central ±40 km), we march rays in 120 directions across the DEM and keep the maximum elevation angle, including lunar curvature (`d²/2R`). Named sites use 720 directions on the full 80 m DEM.

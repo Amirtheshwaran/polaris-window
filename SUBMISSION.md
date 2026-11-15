@@ -17,7 +17,7 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 - **Live 3D south pole:** 384 × 384 km of real LOLA terrain. Scrub or play the timeline and the shadows move with the true Sun position.
 - **Stand at site:** a 360° panorama of the real horizon at any site, with the Sun path (gold) and Earth path (blue) for the next lunar month. Where a path dips behind terrain, you lose power or comms. One click puts you on the surface in 3D.
 - **Auto window finder:** enter a mission length (for example 14 days), minimum sunlight %, minimum Earth visibility %, maximum continuous darkness and maximum comms blackout. It evaluates every 6-hour landing slot from 2025 to 2030 at every site and ranks the best windows.
-- **Side-by-side compare:** 2 to 4 sites, with sunlight %, Earth visibility %, sun AND Earth %, longest darkness, longest blackout and estimated solar energy, plus charts for each lunation over a year.
+- **Side-by-side compare:** 2 to 4 sites, or up to 4 landing dates at one site, with sunlight %, Earth visibility %, sun AND Earth %, longest darkness, longest blackout and estimated solar energy, plus charts for each lunation over a year.
 - **Heatmap mode:** colors the whole region by sunlight, Earth visibility or both, for any date range, computed live in the browser.
 - **Custom sites:** click anywhere on the terrain to add a site with full analysis.
 - **Mission brief:** one click produces a printable or PDF report for the chosen site and date, with sunlight, Earth visibility, longest night and blackout, safety margin, panorama and a day-by-day table.
@@ -29,7 +29,7 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 **How it works**
 1. A Python pipeline reads the LOLA LDEM_80S_80M DEM (80 m/pixel) and ray-marches every terrain point's horizon in 120 to 720 directions out to 220 km, including lunar curvature (131,000 grid points plus 8 named sites). It's accelerated with Numba.
 2. SpiceyPy with NAIF kernels (DE440, high-accuracy lunar orientation, MOON_ME frame) produces hourly Sun and Earth vectors in the same body-fixed frame as LOLA.
-3. Everything is precomputed into about 18 MB of static binary files. The browser does the rest: local azimuth and elevation, horizon comparison, statistics, window search and heatmaps. There's no server, so nothing can go down.
+3. Everything is precomputed into static binary files (about a 10 MB download, with horizon grids delta-encoded and compressed). The browser does the rest: local azimuth and elevation, horizon comparison, statistics, window search and heatmaps. There's no server, so nothing can go down.
 4. **Validation:** we recomputed NASA PGDA's published average-illumination map (Mazarico et al. 2011) for the same 2009–2013 period. Our sunlight map correlates at r = 0.990 (mean absolute error 1.5 percentage points, 98.9% of cells within 10 points). Our Earth-visibility map, which covers direct-to-Earth comms, correlates with NASA's Earth-visibility map at r = 0.992 (mean error 1.8 points). Our Sun and Earth elevations match JPL Horizons to within 0.001°. Both comparisons are shown in the app.
 
 **Benefits:** it turns hours of work across Horizons, Quickmap and spreadsheets into seconds. A landing-date decision becomes a ranked list. Educators and the public get an intuitive, accurate picture of why the south pole is so hard, and so valuable.

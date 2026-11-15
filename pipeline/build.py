@@ -116,7 +116,7 @@ def ephem(t0, t1, step):
     return ets, sun / np.linalg.norm(sun, axis=1)[:, None], earth
 
 
-ETS, SUN, EARTH = ephem("2026-01-01T00:00:00", "2031-01-01T00:00:00", 3600.0)
+ETS, SUN, EARTH = ephem("2025-01-01T00:00:00", "2031-01-01T00:00:00", 3600.0)
 np.hstack([SUN, EARTH / 1000.0]).astype(np.float32).tofile(f"{OUT}/ephem.bin")  # earth in 1000 km
 print("ephem", SUN.shape, flush=True)
 
@@ -194,7 +194,7 @@ SITES = [
     ("mouton", "Mons Mouton", -84.6, 31.0, "high", 20, "Artemis III candidate region (approx.), former VIPER target area"),
     ("faustini", "Faustini PSR", -87.3, 77.0, "low", 4, "Permanently shadowed crater floor, water-ice science target"),
 ]
-Y27 = slice(0, 24 * 365)  # 2026 for snapping
+Y27 = slice(24 * 365, 24 * 730)  # 2026 for snapping
 sites = []
 for sid, name, la, lo, mode, rkm, note in SITES:
     x0, y0 = ll2xy(la, lo)
@@ -236,7 +236,7 @@ meta = dict(
     R=R, obs_h=OBS_H, naz=NAZ, hz_q=dict(offset=-4.0, step=0.1),
     grids={k: dict(half=v[0], n=v[1]) for k, v in GRIDS.items()},
     terrain=dict(half=192000.0, n=TN), terrain_core=dict(half=40000.0, n=CN),
-    ephem=dict(start="2026-01-01T00:00:00Z", step_h=1, count=int(len(ETS)), frame="MOON_ME", earth_unit_km=1000),
+    ephem=dict(start="2025-01-01T00:00:00Z", step_h=1, count=int(len(ETS)), frame="MOON_ME", earth_unit_km=1000),
     validation=dict(period="2009-07-13 to 2013-07-18", source="NASA PGDA / LOLA AVGVISIB_75S_120M_201608 (Mazarico et al. 2011)",
                     grids=val),
     sources=["LOLA LDEM_80S_80M (NASA PDS Geosciences Node)", "NAIF SPICE DE440s + MOON_PA_DE440 + MOON_ME frame",

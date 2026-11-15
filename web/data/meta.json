@@ -25,9 +25,9 @@
   "n": 513
  },
  "ephem": {
-  "start": "2026-01-01T00:00:00Z",
+  "start": "2025-01-01T00:00:00Z",
   "step_h": 1,
-  "count": 43824,
+  "count": 52584,
   "frame": "MOON_ME",
   "earth_unit_km": 1000
  },
@@ -135,5 +135,6 @@
  "slope_q": {
   "step": 0.25,
   "baseline_m": 80
- }
+ },
+ "regions_source": "McClernan, M.T., 2024, Down Selected Artemis III Candidate Landing Site Navigational Grids: USGS data release, https://doi.org/10.5066/P1MEQ6UK"
 }

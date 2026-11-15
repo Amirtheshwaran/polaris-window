@@ -125,6 +125,26 @@
     }
    ],
    "max_abs_diff_deg": 0.0007
+  },
+  "earth": {
+   "source": "NASA PGDA / LOLA AVGVISIB_75S_120M_201608_EARTH (Mazarico et al. 2011)",
+   "criterion": "any part of Earth's disc above terrain",
+   "grids": {
+    "regional": {
+     "cell_m": 1500.0,
+     "r": 0.984712270062891,
+     "mae": 0.029132571639224412,
+     "bias": 0.011432866129716586,
+     "within10": 0.943145751953125
+    },
+    "core": {
+     "cell_m": 312.5,
+     "r": 0.9920270144992801,
+     "mae": 0.01814007018722609,
+     "bias": 0.014966035721403115,
+     "within10": 0.9728546142578125
+    }
+   }
   }
  },
  "sources": [

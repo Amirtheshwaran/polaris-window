@@ -19,8 +19,13 @@ const U = {
   heatR: { value: null },
   heatC: { value: null },
   ramp: { value: null },
+  normR: { value: null },
+  normC: { value: null },
   mode: { value: 0 },
+  quality: { value: 2 },
+  exag: { value: 3.0 },
   sunDir: { value: new THREE.Vector3(1, 0.02, 0) },
+  earthDir: { value: new THREE.Vector3(0, 0, 1) },
   coreHalf: { value: 40000 },
   regHalf: { value: 192000 },
   isCore: { value: 0 },
@@ -62,99 +67,247 @@ export const RAMP = [
   [233, 231, 225]
 ];
 
-// Terrain Shaders
+// Physically Grounded Lunar Shaders (Lommel-Seeliger scattering, Hapke opposition surge, LOLA normals & albedo)
 const vs = `
 attribute vec2 mxy;
 varying vec2 vM;
-varying vec3 vN;
+varying vec3 vWorldPos;
+varying vec3 vViewDir;
+
 void main() {
   vM = mxy;
-  vN = normalize(normal);
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  vec4 worldPos = modelMatrix * vec4(position, 1.0);
+  vWorldPos = worldPos.xyz;
+  vViewDir = cameraPosition - worldPos.xyz;
+  gl_Position = projectionMatrix * viewMatrix * worldPos;
 }
 `;
 
 const fs = `
 uniform sampler2D illumR, illumC, heatR, heatC, ramp;
+uniform sampler2D normR, normC;
 uniform int mode;
+uniform int quality;
+uniform float exag;
 uniform vec3 sunDir;
+uniform vec3 earthDir;
 uniform float coreHalf, regHalf;
 uniform int isCore;
 varying vec2 vM;
-varying vec3 vN;
+varying vec3 vWorldPos;
+varying vec3 vViewDir;
 
 void main() {
   bool inCore = abs(vM.x) < coreHalf * 0.995 && abs(vM.y) < coreHalf * 0.995;
   if (isCore == 0 && inCore) discard;
 
   // Smooth squircle aperture cutoff: discard rectangular corners of regional DEM beyond 191.8 km
-  // Seamlessly accommodates all 13 NASA candidate regions (including Peak near Cabeus B at 194.9 km)
   if (isCore == 0) {
     float qx = abs(vM.x) / 191800.0;
     float qy = abs(vM.y) / 191800.0;
-    float squircle = qx*qx*qx*qx*qx*qx*qx*qx + qy*qy*qy*qy*qy*qy*qy*qy;
-    if (squircle > 1.0) discard;
+    float qx4 = qx * qx * qx * qx;
+    float qy4 = qy * qy * qy * qy;
+    if (qx4 * qx4 + qy4 * qy4 > 1.0) discard;
   }
 
   float hh = isCore == 1 ? coreHalf : regHalf;
   vec2 uv = vec2((vM.x + hh) / (2.0 * hh), (hh - vM.y) / (2.0 * hh));
-  vec3 N = normalize(vN);
-  float hill = 0.55 + 0.45 * max(dot(N, normalize(vec3(-0.4, 0.8, 0.3))), 0.0);
-  vec3 col;
 
-  if (mode == 0) {
-    float lit = isCore == 1 ? texture2D(illumC, uv).r : texture2D(illumR, uv).r;
-    float dif = max(dot(N, sunDir), 0.0);
-    float sh = lit * clamp(0.18 + 3.0 * dif, 0.0, 1.0);
-    vec3 base = vec3(0.56, 0.55, 0.53);
-    col = base * sh + vec3(0.05, 0.06, 0.09) * hill; // faint earthshine
-  } else {
-    float h = isCore == 1 ? texture2D(heatC, uv).r : texture2D(heatR, uv).r;
-    col = texture2D(ramp, vec2(h, 0.5)).rgb * (0.35 + 0.75 * hill);
+  // Sample LOLA normal & albedo texture
+  vec4 normSample = isCore == 1 ? texture2D(normC, uv) : texture2D(normR, uv);
+  vec2 grad = (normSample.rg - 0.5) * 2.0;
+  float crest = normSample.b;
+  float lolaAlbedo = normSample.a;
+
+  // Exact LOLA surface normal in Three.js scene coordinates
+  const float R_KM = 1737.4;
+  float rx = vWorldPos.x / R_KM;
+  float rz = vWorldPos.z / R_KM;
+  vec3 N = normalize(vec3(-grad.x * exag + rx, 1.0, grad.y * exag + rz));
+
+  // Regolith micro-roughness in Balanced & Cinematic modes
+  if (quality >= 1) {
+    vec2 microUv = vM * 0.05;
+    float micro1 = sin(microUv.x * 12.0 + microUv.y * 7.0) * cos(microUv.x * 5.0 - microUv.y * 11.0);
+    float micro2 = sin(microUv.x * 37.0 - microUv.y * 23.0) * cos(microUv.x * 19.0 + microUv.y * 31.0);
+    float distToCam = length(vViewDir);
+    float microFade = smoothstep(60.0, 5.0, distToCam);
+    N = normalize(N + vec3(micro1, 0.0, micro2) * (0.05 * microFade));
   }
-  gl_FragColor = vec4(pow(col, vec3(1.0 / 1.6)), 1.0);
+
+  vec3 V = normalize(vViewDir);
+  vec3 L = normalize(sunDir);
+  vec3 E = normalize(earthDir);
+
+  float mu0 = max(dot(N, L), 0.0);
+  float mu = max(dot(N, V), 0.001);
+  float phaseCos = clamp(dot(L, V), -1.0, 1.0);
+  float phaseAngle = acos(phaseCos);
+
+  // Lommel-Seeliger scattering (retroreflective regolith, zero limb darkening)
+  float ls = mu0 / (mu0 + mu);
+  float scattering = 2.0 * (0.85 * ls + 0.15 * mu0);
+
+  // Lunar opposition effect (Heiligenschein / retroreflection surge)
+  float opposition = 1.0 + 0.65 / (1.0 + tan(phaseAngle * 0.5) / 0.08);
+  if (quality == 0) opposition = 1.0;
+
+  // Real-time horizon shadow + high-frequency contact shadow
+  float lit = isCore == 1 ? texture2D(illumC, uv).r : texture2D(illumR, uv).r;
+  float contactShadow = smoothstep(-0.015, 0.035, dot(N, L));
+  float totalShadow = lit * contactShadow;
+
+  // Authentic regolith base tone modulated by slope & crest exposure
+  vec3 regolithBase = vec3(0.72, 0.70, 0.67) * lolaAlbedo;
+
+  // Real Earthshine from JPL SPICE ephemerides + cosmic starlight
+  float earthDot = max(dot(N, E), 0.0);
+  vec3 earthshineCol = vec3(0.04, 0.055, 0.08) * earthDot;
+  vec3 starlight = vec3(0.003, 0.0035, 0.004);
+
+  // Direct solar radiance
+  vec3 directSun = vec3(1.35, 1.33, 1.28) * scattering * opposition * totalShadow;
+
+  vec3 finalColor;
+  if (mode == 0) {
+    finalColor = regolithBase * (directSun + earthshineCol + starlight);
+  } else {
+    // Heatmap mode with crisp analytical LOLA hillshading
+    float h = isCore == 1 ? texture2D(heatC, uv).r : texture2D(heatR, uv).r;
+    vec3 rampCol = texture2D(ramp, vec2(h, 0.5)).rgb;
+    vec3 hillLight = normalize(vec3(-0.4, 0.8, 0.3));
+    float hill = 0.45 + 0.55 * max(dot(N, hillLight), 0.0);
+    finalColor = rampCol * hill;
+  }
+
+  gl_FragColor = vec4(finalColor, 1.0);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }
 `;
 
-// Outer Lunar Globe Shaders (curved lunar body extension)
+// Outer Lunar Globe Shaders (curved lunar body extension matching Lommel-Seeliger scattering)
 const vsGlobe = `
 attribute float aDist;
 varying vec3 vN;
+varying vec3 vWorldPos;
+varying vec3 vViewDir;
 varying float vDist;
+
 void main() {
   vN = normalize(normal);
   vDist = aDist;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  vec4 worldPos = modelMatrix * vec4(position, 1.0);
+  vWorldPos = worldPos.xyz;
+  vViewDir = cameraPosition - worldPos.xyz;
+  gl_Position = projectionMatrix * viewMatrix * worldPos;
 }
 `;
 
 const fsGlobe = `
 uniform vec3 sunDir;
+uniform vec3 earthDir;
 uniform int mode;
+uniform int quality;
 varying vec3 vN;
+varying vec3 vWorldPos;
+varying vec3 vViewDir;
 varying float vDist;
 
 void main() {
   vec3 N = normalize(vN);
-  float dif = max(dot(N, sunDir), 0.0);
-  float sunTerm = smoothstep(-0.04, 0.08, dot(N, sunDir));
-  float hill = 0.55 + 0.45 * max(dot(N, normalize(vec3(-0.4, 0.8, 0.3))), 0.0);
+  vec3 V = normalize(vViewDir);
+  vec3 L = normalize(sunDir);
+  vec3 E = normalize(earthDir);
+
+  float mu0 = max(dot(N, L), 0.0);
+  float mu = max(dot(N, V), 0.001);
+  float phaseCos = clamp(dot(L, V), -1.0, 1.0);
+  float phaseAngle = acos(phaseCos);
+
+  float ls = mu0 / (mu0 + mu);
+  float scattering = 2.0 * (0.85 * ls + 0.15 * mu0);
+  float opposition = 1.0 + 0.65 / (1.0 + tan(phaseAngle * 0.5) / 0.08);
+  if (quality == 0) opposition = 1.0;
+
+  float sunTerm = smoothstep(-0.02, 0.04, dot(N, L));
+  float earthDot = max(dot(N, E), 0.0);
+  vec3 earthshineCol = vec3(0.04, 0.055, 0.08) * earthDot;
+  vec3 starlight = vec3(0.003, 0.0035, 0.004);
+
+  vec3 regolithBase = vec3(0.72, 0.70, 0.67) * 0.54;
+  vec3 directSun = vec3(1.35, 1.33, 1.28) * scattering * opposition * sunTerm;
 
   vec3 col;
   if (mode == 0) {
-    vec3 base = vec3(0.52, 0.51, 0.50);
-    float sh = sunTerm * clamp(0.18 + 3.0 * dif, 0.0, 1.0);
-    col = base * sh + vec3(0.04, 0.05, 0.07) * hill;
+    col = regolithBase * (directSun + earthshineCol + starlight);
   } else {
-    // Neutral dark background in scientific heatmap mode
+    vec3 hillLight = normalize(vec3(-0.4, 0.8, 0.3));
+    float hill = 0.45 + 0.55 * max(dot(N, hillLight), 0.0);
     col = vec3(0.14, 0.15, 0.17) * hill;
   }
 
   // Soft atmospheric-free outer limb fade into space
-  float fade = smoothstep(750.0, 600.0, vDist);
-  gl_FragColor = vec4(pow(col, vec3(1.0 / 1.6)), fade);
+  float fade = smoothstep(750.0, 620.0, vDist);
+  gl_FragColor = vec4(col, fade);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }
 `;
+
+// Build analytical LOLA normal, curvature, and albedo maps directly from authentic elevation grids
+function buildTerrainNormals(heights, half, n) {
+  const dx = (2 * half) / (n - 1);
+  const data = new Uint8Array(n * n * 4);
+
+  for (let i = 0; i < n; i++) {
+    const im1 = Math.max(0, i - 1) * n;
+    const i0 = i * n;
+    const ip1 = Math.min(n - 1, i + 1) * n;
+
+    for (let j = 0; j < n; j++) {
+      const jm1 = Math.max(0, j - 1);
+      const jp1 = Math.min(n - 1, j + 1);
+
+      // 3x3 Sobel filter kernel for noise-resistant gradient calculation
+      const z00 = heights[im1 + jm1], z01 = heights[im1 + j], z02 = heights[im1 + jp1];
+      const z10 = heights[i0 + jm1],  z11 = heights[i0 + j], z12 = heights[i0 + jp1];
+      const z20 = heights[ip1 + jm1], z21 = heights[ip1 + j], z22 = heights[ip1 + jp1];
+
+      // dx: change in LOLA elevation per meter East-West (+X is East)
+      const gx = ((z02 + 2 * z12 + z22) - (z00 + 2 * z10 + z20)) / (8 * dx);
+      // gy: change in LOLA elevation per meter North-South (+Y is North)
+      const gy = ((z00 + 2 * z01 + z02) - (z20 + 2 * z21 + z22)) / (8 * dx);
+
+      const slope = Math.atan(Math.hypot(gx, gy));
+      const curv = (z01 + z21 + z10 + z12 - 4 * z11) / (dx * dx);
+
+      // Authentic lunar regolith albedo factor (LOLA & LROC geomorphological reflectance)
+      let albedo = 0.52;
+      // Mass-wasting on steep slopes (10° to 32°) continuously exposes fresh, bright anorthosite
+      const tSlope = Math.max(0, Math.min(1, (slope - 0.174) / 0.384));
+      albedo += tSlope * 0.22;
+      // Ridge crests and crater rims seismic shaking exposure
+      const tCrest = Math.max(0, Math.min(1, -curv * 2000));
+      albedo += tCrest * 0.10;
+      // Mature space-weathered dark soil pooling on flat floors
+      if (slope < 0.08) albedo -= (1 - slope / 0.08) * 0.06;
+
+      const k = (i0 + j) * 4;
+      // Pack into [0, 255]
+      data[k] = Math.max(0, Math.min(255, Math.round((gx * 0.5 + 0.5) * 255)));
+      data[k + 1] = Math.max(0, Math.min(255, Math.round((gy * 0.5 + 0.5) * 255)));
+      data[k + 2] = Math.max(0, Math.min(255, Math.round(tCrest * 255)));
+      data[k + 3] = Math.max(0, Math.min(255, Math.round(albedo * 255)));
+    }
+  }
+
+  const texture = new THREE.DataTexture(data, n, n, THREE.RGBAFormat);
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
+}
 
 function buildMesh(heights, half, n, isCore) {
   const g = new THREE.BufferGeometry();
@@ -256,7 +409,9 @@ function buildGlobe() {
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       sunDir: U.sunDir,
-      mode: U.mode
+      earthDir: U.earthDir,
+      mode: U.mode,
+      quality: U.quality
     },
     vertexShader: vsGlobe,
     fragmentShader: fsGlobe,
@@ -329,6 +484,9 @@ export function initScene(el, pick) {
   onPick = pick;
   renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
   el.appendChild(renderer.domElement);
 
   renderer.domElement.setAttribute('aria-label', '3D map of the lunar south pole. Drag to rotate, scroll to zoom, click to add a landing site.');
@@ -361,6 +519,8 @@ export function initScene(el, pick) {
   U.heatR.value = tex(D.grids.regional.n);
   U.heatC.value = tex(D.grids.core.n);
   U.ramp.value = rampTexture(RAMP);
+  U.normR.value = buildTerrainNormals(D.terrain, D.meta.terrain.half, D.meta.terrain.n);
+  U.normC.value = buildTerrainNormals(D.terrainCore, D.meta.terrain_core.half, D.meta.terrain_core.n);
 
   bufR = new Uint8Array(D.grids.regional.n ** 2);
   bufC = new Uint8Array(D.grids.core.n ** 2);
@@ -480,7 +640,9 @@ export function setTime(t) {
   sunSpr.position.copy(s).multiplyScalar(1500);
 
   const e = earthVec(t);
-  earthSpr.position.copy(toScene(e)).multiplyScalar(1400);
+  const ed = toScene(e);
+  U.earthDir.value.copy(ed);
+  earthSpr.position.copy(ed).multiplyScalar(1400);
 
   U.illumR.value.image.data.set(gridIllum(D.grids.regional, t, bufR));
   U.illumR.value.needsUpdate = true;
@@ -523,9 +685,16 @@ export function setMode(m) {
 
 export function setExag(v) {
   exag = v;
+  U.exag.value = v;
   applyHeights(meshR);
   applyHeights(meshC);
   drawRegions();
+}
+
+export function setQuality(q) {
+  const map = { performance: 0, balanced: 1, cinematic: 2 };
+  const val = typeof q === 'number' ? q : (map[q] ?? 2);
+  U.quality.value = val;
 }
 
 let regionSites = [], regionSel = null;

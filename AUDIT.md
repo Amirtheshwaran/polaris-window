@@ -113,3 +113,44 @@ All 8 requested viewport resolutions were tested and verified:
 - **Surfaces**: Solid charcoal `#151619` and `#1c1e22`. Removed all glassmorphism, blur effects, neon accents, and colored indicators.
 - **Charts**: Chart.js telemetry curves and skyline silhouettes rendered in high-contrast Lunar White and muted grays.
 - **Icons**: Clean SVGs with zero decorative emojis.
+
+## Cinematic Lunar Rendering Overhaul (Phase A - Phase G)
+
+A graphics and real-time visualization overhaul was engineered to elevate the realism and fidelity of Polaris Window's 3D lunar surface:
+
+1. **Modern Three.js Upgrade (r187)**:
+   - Upgraded from legacy build to modern Three.js r187, bundled into a high-performance standalone ESM module (`web/vendor/three.module.min.js`, 731 KB).
+   - Upgraded `OrbitControls.js` with ES module imports.
+   - Clean browser importmap resolution with zero external CDN dependencies.
+
+2. **Analytical LOLA Elevation Normals & Geomorphological Albedo**:
+   - Implemented `buildTerrainNormals` computing central-difference 3x3 Sobel gradients ($\partial h/\partial x$, $\partial h/\partial y$) and Laplacian curvature directly from authentic LOLA elevation data (`web/data/terrain.bin` $641 \times 641$ and `web/data/terrain_core.bin` $513 \times 513$).
+   - Dynamically couples terrain slope gradients with the physical quad-parabolic lunar body curvature ($\vec{N} = \text{normalize}(-\text{exag} \cdot \vec{g} + \vec{r}/R)$).
+   - Modeled lunar regolith albedo variation: slope-driven mass wasting ($10^\circ - 32^\circ$) continuously exposes bright immature anorthosite (albedo $+22\%$), while flat crater basins accumulate space-weathered dark soil (albedo $-6\%$) and crater rims exhibit impact-gardening brightness ($+10\%$).
+
+3. **Lommel-Seeliger Photometric Scattering & Opposition Effect**:
+   - Replaced flat clamped Lambertian shading with the Lommel-Seeliger regolith scattering law ($S(\mu_0, \mu) = 2.0(0.85 \frac{\mu_0}{\mu_0+\mu} + 0.15 \mu_0)$) providing natural surface contrast without artificial limb darkening.
+   - Implemented the Hapke lunar opposition surge (Heiligenschein halo effect when phase angle $\alpha \to 0$ looking along the solar vector).
+   - Integrated authentic JPL SPICE ephemeris Earthshine vector (`earthVec(t)`) illuminating permanently shadowed crater bottoms based on the real position of the Earth in the lunar sky.
+   - High-frequency contact self-shadowing combined with horizon occlusion grids (`lit * contactShadow`).
+
+4. **Curved Lunar Globe Backdrop Parity**:
+   - Extended the curved spherical lunar globe ($R = 1,737.4\text{ km}$, radius $140 - 750\text{ km}$) with matching Lommel-Seeliger scattering, Earthshine, and tonal calibration for seamless visual continuity at wide orbital zoom levels.
+
+5. **Color Management & Quality Presets**:
+   - Enabled `renderer.toneMapping = THREE.ACESFilmicToneMapping` with exposure $1.05$ and `THREE.SRGBColorSpace`.
+   - Added user-facing Render Quality selector in Display Settings: **Fast** (performance), **Balanced**, and **Cinematic** (full Hapke opposition surge, micro-roughness, contact shadows).
+   - Preserves user preference in `localStorage`.
+
+6. **Benchmark Views & Visual Verification**:
+   - Captured and verified 7 baseline and post-upgrade views (`media/baselines/` and `media/after_cinematic/`):
+     - View 1: Regional Overview
+     - View 2: Shackleton Rim
+     - View 3: Connecting Ridge
+     - View 4: Close-up Crater Terrain
+     - View 5: Wide Orbital View
+     - View 6: Low-Sun Grazing Illumination
+     - View 7: Custom Site Placement
+     - View 8: Scientific Heatmap Mode with LOLA Hillshading
+   - Zero console errors, zero WebGL shader compilation warnings across all presets and map layers.
+

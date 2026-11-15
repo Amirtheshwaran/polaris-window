@@ -3,5 +3,6 @@ __pycache__/
 raw/
 graphify-out/
 .pytest_cache/
+scratch/
 
 HANDOVER.md

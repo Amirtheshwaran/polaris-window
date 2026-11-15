@@ -202,6 +202,28 @@ export function update() {
     b.onclick = () => setMode(b.dataset.m);
   });
 
+  // Render Quality Segment buttons
+  try {
+    const savedQ = localStorage.getItem('polaris_quality');
+    if (savedQ) {
+      const btn = $(`#qualitySeg button[data-q="${savedQ}"]`);
+      if (btn) {
+        $$('#qualitySeg button').forEach(x => x.classList.remove('on'));
+        btn.classList.add('on');
+        SC.setQuality(savedQ);
+      }
+    }
+  } catch (_) {}
+
+  $$('#qualitySeg button').forEach(b => {
+    b.onclick = () => {
+      $$('#qualitySeg button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      SC.setQuality(b.dataset.q);
+      try { localStorage.setItem('polaris_quality', b.dataset.q); } catch (_) {}
+    };
+  });
+
   // Onboarding banner
   if ($('introDismissBtn')) {
     $('introDismissBtn').onclick = () => $('intro-banner')?.classList.add('dismissed');

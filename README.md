@@ -16,6 +16,9 @@ NASA Space Apps Challenge 2026: *Lunar Landing Site Navigator*
 ![Our sunlight map vs NASA's published map](media/5-validation-vs-nasa.png)
 *Validation: our model (center) reproduces NASA's published south-pole illumination map (left) with r = 0.990.*
 
+![Our Earth-visibility map vs NASA's published map](media/6-earth-validation-vs-nasa.png)
+*Comms validation: our Earth-visibility (direct-to-Earth) map reproduces NASA's published map with r = 0.992.*
+
 Polaris Window is a browser-based mission planner for the lunar south pole. It uses real NASA terrain and ephemeris to answer the planner's question directly: *which site, and which landing date, gives us the power and the direct-to-Earth comms we need?*
 
 ## Features
@@ -28,7 +31,8 @@ Polaris Window is a browser-based mission planner for the lunar south pole. It u
 | **Side-by-side compare** | 2 to 4 sites: sunlight %, Earth visibility %, sun AND Earth %, longest darkness, longest comms blackout and solar energy, plus charts for each lunation. |
 | **Heatmap mode** | Colors the whole region by sunlight, Earth visibility, or both, for any date range. It's computed live in the browser from 131k precomputed terrain horizons. |
 | **Drop your own site** | Click anywhere on the terrain. Custom sites get full statistics, a panorama and window ranking. |
-| **Checked against NASA** | Our illumination map reproduces NASA PGDA's published south-pole average-illumination map with r = 0.99 (mean error 1.5 points), and our Sun and Earth elevations match JPL Horizons to 0.001°. |
+| **Checked against NASA** | Our sunlight map reproduces NASA PGDA's published south-pole illumination map with r = 0.990 (mean error 1.5 points), our Earth-visibility (comms) map reproduces NASA's Earth-visibility map with r = 0.992 (mean error 1.8 points), and our Sun and Earth elevations match JPL Horizons to 0.001°. |
+| **Mission brief** | One click produces a printable or PDF report for the chosen site and landing date: key numbers, safety margin, panorama, 60-day outlook and a day-by-day table. |
 | **Shareable links** | Every view (site, date, tab, heatmap, custom site) is encoded in the URL, so educators can send a class to an exact moment. |
 | **Explore / Planner modes + guided tour** | An 8-step narrated tour for classrooms and the public, and full controls for planners. |
 

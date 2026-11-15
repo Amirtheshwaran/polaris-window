@@ -1,0 +1,129 @@
+/* ==========================================================================
+   Polaris Window — Main Viewport Shell, 3D Canvas & HUD Layout
+   ========================================================================== */
+
+main#app-shell {
+  display: flex;
+  height: calc(100vh - 48px);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 3D Centerpiece Viewport */
+#view3d {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--obsidian-dark);
+}
+#view3d canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* HUD Overlay on 3D Viewport */
+#hud-overlay {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 360px;
+}
+.hud-telemetry-badge {
+  background: rgba(16, 17, 19, 0.90);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  box-shadow: var(--shadow-sm);
+  pointer-events: auto;
+}
+.hud-site-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lunar-white);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hud-site-title .status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lunar-white);
+  box-shadow: 0 0 8px rgba(233, 231, 225, 0.6);
+}
+.hud-site-coords {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-top: 3px;
+}
+
+.hud-trust-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: rgba(16, 17, 19, 0.85);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  text-decoration: none;
+  pointer-events: auto;
+  transition: all var(--transition-fast);
+}
+.hud-trust-tag:hover {
+  background: var(--obsidian-surface-2);
+  border-color: var(--border-medium);
+  color: var(--lunar-white);
+  text-decoration: none;
+}
+
+/* 3D Scene Interactive Overlay Labels */
+#labels {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.lbl {
+  position: absolute;
+  transform: translate(-50%, -140%);
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(16, 17, 19, 0.88);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.lbl:hover {
+  background: var(--obsidian-surface-2);
+  border-color: var(--border-medium);
+  color: var(--lunar-white);
+}
+.lbl.on {
+  border-color: var(--lunar-white);
+  color: var(--lunar-white);
+  background: rgba(16, 17, 19, 0.98);
+  box-shadow: 0 0 10px rgba(233, 231, 225, 0.25);
+  font-weight: 600;
+}
+.lbl.geo {
+  background: rgba(21, 22, 25, 0.8);
+  border-color: var(--border-subtle);
+  color: var(--text-muted);
+  pointer-events: none;
+}

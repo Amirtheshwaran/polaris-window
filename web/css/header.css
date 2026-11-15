@@ -1,0 +1,135 @@
+/* ==========================================================================
+   Polaris Window — Header & Navigation Components
+   ========================================================================== */
+
+header {
+  height: 48px;
+  background: var(--obsidian-dark);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  position: relative;
+  z-index: 50;
+  gap: 16px;
+}
+
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 240px;
+}
+.brand-mark {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.brand-mark svg {
+  width: 100%;
+  height: 100%;
+}
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+.brand-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--lunar-white);
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+.brand-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+/* Primary 3 Destinations Navigation */
+nav.primary-nav {
+  display: flex;
+  align-items: center;
+  background: var(--obsidian-surface-1);
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+  gap: 2px;
+}
+nav.primary-nav button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 16px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.02em;
+}
+nav.primary-nav button:hover {
+  color: var(--lunar-white);
+  background: var(--obsidian-surface-2);
+}
+nav.primary-nav button.active {
+  background: var(--lunar-white);
+  color: var(--obsidian);
+  font-weight: 600;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* Header Utilities */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-pill-btn {
+  background: var(--obsidian-surface-1);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+}
+.nav-pill-btn:hover {
+  background: var(--obsidian-surface-2);
+  color: var(--lunar-white);
+  border-color: var(--border-medium);
+  text-decoration: none;
+}
+.nav-pill-btn.active {
+  border-color: var(--lunar-white);
+  color: var(--lunar-white);
+  background: var(--lunar-white-12);
+}
+
+/* Segmented control (Monochrome) */
+.seg {
+  display: flex;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--obsidian-surface-1);
+}
+.seg button {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 4px 10px;
+}
+.seg button:hover {
+  color: var(--lunar-white);
+}
+.seg button.on {
+  background: var(--lunar-white);
+  color: var(--obsidian);
+  font-weight: 600;
+}

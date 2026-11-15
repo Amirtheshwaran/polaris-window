@@ -1,0 +1,202 @@
+/* ==========================================================================
+   Polaris Window — Plan View: Constraints, Windows Table, Calendar & Battery
+   ========================================================================== */
+
+/* 12-Month Calendar Grid (Monochrome) */
+#cal {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+}
+.calrow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+}
+.calrow span {
+  width: 44px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.cl {
+  display: inline-block;
+  width: 7px;
+  height: 9px;
+  border-radius: 1px;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+.cl:hover {
+  outline: 1px solid #fff;
+  opacity: 0.8;
+}
+.c3 { background: #E9E7E1; } /* Full Sun + Earth */
+.c2 { background: rgba(233, 231, 225, 0.6); } /* Partial */
+.c1 { background: rgba(233, 231, 225, 0.3); } /* Sun only */
+.c0 { background: #1c1e22; } /* Dark */
+
+/* Battery Survival Simulator */
+.survival-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.form-row-slider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.form-row-slider input[type="range"] {
+  flex: 1;
+}
+.form-row-slider b {
+  font-family: var(--font-mono);
+  color: var(--lunar-white);
+  min-width: 70px;
+  text-align: right;
+}
+#svChart {
+  width: 100%;
+  height: 80px;
+  background: #08080a;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Planner Destination Views */
+.plan-deck-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.preset-segmented-control {
+  display: flex;
+  background: var(--obsidian-surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 2px;
+}
+.preset-segmented-control button {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 5px;
+  border-radius: var(--radius-sm);
+}
+.preset-segmented-control button.on {
+  background: var(--lunar-white);
+  color: var(--obsidian);
+  font-weight: 600;
+}
+
+.plan-constraints-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--obsidian-surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+.form-field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.form-field-row input[type="number"], .form-field-row select, .form-field-row input[type="date"] {
+  width: 100px;
+  padding: 4px 8px;
+}
+
+/* Recommended Window Banner */
+.winner-card {
+  background: var(--obsidian-surface-2);
+  border: 1px solid var(--lunar-white-75);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+}
+.winner-card-tag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--lunar-white);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.winner-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--lunar-white);
+  margin: 4px 0;
+}
+.winner-card-body {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Ranked Windows Table */
+.data-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--obsidian-surface-1);
+}
+table.telemetry-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+table.telemetry-table th, table.telemetry-table td {
+  padding: 6px 8px;
+  text-align: right;
+  border-bottom: 1px solid var(--border-subtle);
+}
+table.telemetry-table th:first-child, table.telemetry-table td:first-child {
+  text-align: left;
+}
+table.telemetry-table th {
+  background: var(--obsidian-surface-2);
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+table.telemetry-table tr.click {
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+table.telemetry-table tr.click:hover {
+  background: var(--obsidian-surface-2);
+}
+table.telemetry-table td.good {
+  color: var(--lunar-white);
+  font-weight: 600;
+}
+table.telemetry-table td.bad {
+  color: var(--text-muted);
+}
+
+/* Feasibility distribution strip canvas */
+canvas.calStrip {
+  width: 100%;
+  height: 16px;
+  border-radius: var(--radius-sm);
+  display: block;
+  margin: 4px 0 8px;
+}

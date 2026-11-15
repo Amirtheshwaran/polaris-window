@@ -1,0 +1,153 @@
+/* ==========================================================================
+   Polaris Window — Base Resets, Typography & Common Controls
+   ========================================================================== */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background: var(--obsidian);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 14px 0 6px;
+  font-weight: 600;
+}
+
+p {
+  margin: 0 0 8px;
+}
+
+a {
+  color: var(--lunar-white);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--lunar-white-35);
+  transition: all var(--transition-fast);
+}
+a:hover {
+  text-decoration-color: var(--lunar-white);
+  color: #fff;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Controls & Inputs */
+button, select, input {
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text-primary);
+  background: var(--obsidian-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 5px 10px;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+button {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 500;
+}
+button:hover {
+  background: var(--obsidian-surface-3);
+  border-color: var(--border-medium);
+}
+button:active {
+  transform: translateY(1px);
+}
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible {
+  outline: 2px solid var(--lunar-white);
+  outline-offset: 2px;
+}
+
+input[type="number"], input[type="date"], input[type="datetime-local"] {
+  background: var(--obsidian-surface-1);
+  border: 1px solid var(--border-subtle);
+}
+input[type="number"]:focus, input[type="date"]:focus, input[type="datetime-local"]:focus, select:focus {
+  border-color: var(--lunar-white-75);
+}
+
+/* Range sliders */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--obsidian-surface-3);
+  height: 4px;
+  border-radius: 2px;
+  border: none;
+  padding: 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--lunar-white);
+  border: 2px solid var(--obsidian);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+  cursor: ew-resize;
+  transition: transform var(--transition-fast);
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Primary Action Button (Strict Monochrome Solid White) */
+button.primary-action {
+  background: var(--lunar-white);
+  color: var(--obsidian);
+  border: none;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 10px rgba(233, 231, 225, 0.15);
+  transition: all var(--transition-fast);
+}
+button.primary-action:hover {
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(233, 231, 225, 0.25);
+}
+button.primary-action:active {
+  transform: translateY(1px);
+}

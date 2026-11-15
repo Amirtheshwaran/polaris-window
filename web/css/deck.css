@@ -1,0 +1,88 @@
+/* ==========================================================================
+   Polaris Window — Floating Right Panel: Mission Deck & Accordions
+   ========================================================================== */
+
+#panel-deck {
+  position: absolute;
+  top: 14px;
+  bottom: 74px;
+  right: 16px;
+  width: 440px;
+  z-index: 20;
+  background: rgba(16, 17, 19, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.deck-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.deck-body::-webkit-scrollbar {
+  width: 4px;
+}
+.deck-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.deck-body::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 2px;
+}
+
+.tab { display: none; }
+.tab.on { display: block; }
+
+/* Collapsible Secondary Tool Drawers */
+.accordion-section {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--obsidian-surface-1);
+  overflow: hidden;
+}
+.accordion-header {
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  background: var(--obsidian-surface-1);
+  transition: background var(--transition-fast);
+}
+.accordion-header:hover {
+  background: var(--obsidian-surface-2);
+}
+.accordion-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.accordion-arrow {
+  color: var(--text-muted);
+  font-size: 10px;
+  transition: transform var(--transition-fast);
+}
+.accordion-section.open .accordion-arrow {
+  transform: rotate(180deg);
+}
+.accordion-content {
+  padding: 12px;
+  border-top: 1px solid var(--border-subtle);
+  display: none;
+}
+.accordion-section.open .accordion-content {
+  display: block;
+}

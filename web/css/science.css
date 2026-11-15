@@ -1,0 +1,48 @@
+/* ==========================================================================
+   Polaris Window — Science View: Validation, Pipelines & Data Dossier
+   ========================================================================== */
+
+.science-dossier {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.pipeline-flow-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  background: var(--obsidian-surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 8px;
+  overflow-x: auto;
+}
+.pipeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 65px;
+}
+.pipeline-step-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--lunar-white);
+}
+.pipeline-step-sub {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+.pipeline-arrow {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.valimg {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  margin-top: 8px;
+  filter: contrast(1.05);
+}

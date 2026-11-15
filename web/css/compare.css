@@ -1,0 +1,44 @@
+/* ==========================================================================
+   Polaris Window — Comparison View & Multi-Site Statistics
+   ========================================================================== */
+
+/* Stats grid */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+.stat {
+  background: var(--obsidian-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+}
+.stat b {
+  display: block;
+  font-size: 15px;
+  font-family: var(--font-mono);
+  color: var(--lunar-white);
+}
+.stat span {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.chips label {
+  background: var(--obsidian-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.chips input {
+  margin-right: 4px;
+}

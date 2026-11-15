@@ -1,0 +1,70 @@
+/* ==========================================================================
+   Polaris Window — Accessibility (Reduced Motion) & Responsive Breakpoints
+   ========================================================================== */
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile & Tablet Responsive Adaptations */
+@media (max-width: 1024px) {
+  #panel-deck {
+    width: 380px;
+  }
+  #panel-sites {
+    width: 260px;
+  }
+}
+
+@media (max-width: 820px) {
+  header {
+    height: auto;
+    padding: 8px 12px;
+    flex-wrap: wrap;
+  }
+  .brand-block {
+    min-width: 0;
+  }
+  main#app-shell {
+    height: calc(100vh - 84px);
+  }
+  #panel-deck {
+    top: auto;
+    right: 8px;
+    left: 8px;
+    width: auto;
+    bottom: 100px;
+    max-height: 42%;
+  }
+  #panel-sites {
+    z-index: 35;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    bottom: 100px;
+    max-height: 60%;
+  }
+  #timeline-dock {
+    width: calc(100% - 16px);
+    bottom: 8px;
+    height: 84px;
+    flex-wrap: wrap;
+    padding: 0 10px;
+  }
+  #timeInput {
+    display: block;
+    width: 200px;
+  }
+  .brand-sub { display: none; }
+  .header-actions { flex-wrap: wrap; gap: 4px; }
+  #intro-banner { top: 150px; left: 8px; right: 8px; width: auto; border-radius: 6px; }
+  #hud-overlay { top: 48px; max-width: calc(100% - 32px); }
+  #sites-toggle-pill { top: 8px; }
+  .form-field-row { flex-wrap: wrap; }
+  #tourBox { bottom: 100px; }
+}

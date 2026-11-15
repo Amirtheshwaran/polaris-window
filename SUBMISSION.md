@@ -74,7 +74,7 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 | 0:23 | Validation tab (r = 0.99) | "...and every result is checked against NASA's own illumination maps." |
 | 0:26 | Share link, then the 3D fly-over | "From mission planners to classrooms: pick your window to the Moon." |
 
-**Easiest way to record:** open https://amirtheshwaran.github.io/polaris-window/#demo=1 in Chrome, press F11 (fullscreen), start a screen recorder (Windows: Win+Alt+R with Xbox Game Bar; Mac: Cmd+Shift+5), then reload the page. A 30-second choreographed sequence plays with English captions built in. Trim to 30 s or less, add the voiceover (optional, since the captions already tell the story), and upload to YouTube as Public or Unlisted. Test the link in a private window.
+**Easiest way to record:** open https://amirtheshwaran.github.io/polaris-window/#demo=1 in Chrome, press F11 (fullscreen), start a screen recorder (Windows: Win+Alt+R with Xbox Game Bar; Mac: Cmd+Shift+5), then reload the page. A 30-second choreographed sequence plays with English captions built in. Trim to 30 s or less, add the voiceover (optional, since the captions already tell the story), and upload to YouTube as Public or Unlisted. Test the link in a private window. For YouTube, upload `media/demo-captions.srt` as English subtitles (it matches demo mode's timing) and use `media/youtube-thumbnail.png` as the thumbnail.
 
 ---
 

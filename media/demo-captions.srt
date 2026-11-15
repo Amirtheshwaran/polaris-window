@@ -1,0 +1,31 @@
+1
+00:00:00,000 --> 00:00:02,000
+Hi, we are team Polaris Window.
+
+2
+00:00:02,000 --> 00:00:05,000
+Landing at the Moon's south pole means fighting for sunlight and a line of sight to Earth.
+
+3
+00:00:05,000 --> 00:00:08,500
+Polaris Window: know exactly when and where to land.
+
+4
+00:00:08,500 --> 00:00:14,000
+Built on NASA LOLA terrain and JPL ephemeris: stand at any site and watch the Sun and Earth cross the real horizon.
+
+5
+00:00:14,000 --> 00:00:19,000
+Enter your mission length and power and comms limits, and it ranks the best landing dates.
+
+6
+00:00:19,000 --> 00:00:23,000
+Map sunlight, Earth contact and safe flat ground across the whole region...
+
+7
+00:00:23,000 --> 00:00:26,000
+...and every result is checked against NASA's own illumination maps and JPL Horizons.
+
+8
+00:00:26,000 --> 00:00:30,000
+From mission planners to classrooms: pick your window to the Moon.

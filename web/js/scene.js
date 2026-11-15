@@ -111,7 +111,12 @@ export function initScene(el, pick) {
     const hit = raycaster.intersectObjects([meshC, meshR])[0];
     if (hit) { const x = hit.point.x * 1000, y = -hit.point.z * 1000; if (!(hit.object === meshR && Math.abs(x) < 39800 && Math.abs(y) < 39800)) onPick && onPick(x, y); }
   });
-  (function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); updateLabels(); })();
+  // Adaptive quality: if the first 60 frames (or 2.5 s) average slower than 30 fps, drop to 1x pixel ratio (big win on hi-DPI laptops with integrated GPUs)
+  let fN = 0, fT0 = 0;
+  (function loop(ts) {
+    requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); updateLabels();
+    if (fN >= 0 && ts) { if (!fT0) fT0 = ts; if (++fN >= 60 || (fN > 3 && ts - fT0 > 2500)) { const ms = (ts - fT0) / (fN - 1); if (ms > 33 && renderer.getPixelRatio() > 1) { renderer.setPixelRatio(1); const w = el.clientWidth, h = el.clientHeight; renderer.setSize(w, h); console.info('Polaris Window: switched to standard resolution for smoother 3D'); } fN = -1; } }
+  })();
 }
 
 export const toScene = v => new THREE.Vector3(v[1], -v[2], -v[0]).normalize(); // MOON_ME -> scene (south pole up)

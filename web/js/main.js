@@ -972,6 +972,10 @@ function demo() {
   $('tFwd').onclick = () => step(24);
 
   addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (!$('shareBox').hidden) { $('shareBox').hidden = true; return; }
+      if (!$('settingsModal').hidden) { $('settingsModal').hidden = true; return; }
+    }
     if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName) && document.activeElement.type !== 'range') return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
       e.preventDefault();

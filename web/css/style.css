@@ -48,6 +48,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -1255,6 +1259,9 @@ canvas.calStrip {
   justify-content: center;
   z-index: 60;
   padding: 16px;
+}
+.modal-overlay[hidden] {
+  display: none !important;
 }
 .modal-card {
   max-width: 480px;

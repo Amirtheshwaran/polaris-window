@@ -146,6 +146,49 @@ export function update() {
     };
   }
 
+  // Open / Close Contextual Site Details Panel
+  if ($('openDetailsBtn')) {
+    $('openDetailsBtn').onclick = () => {
+      const deck = $('panel-deck');
+      if (deck) {
+        deck.classList.remove('collapsed');
+        deck.dataset.explicitOpen = 'true';
+        // Rule of one drawer: close sites drawer if open
+        const sites = $('panel-sites');
+        if (sites) {
+          sites.classList.add('collapsed');
+          sites.inert = true;
+          $('sites-toggle-pill')?.classList.remove('active');
+        }
+      }
+    };
+  }
+
+  if ($('deckCloseBtn')) {
+    $('deckCloseBtn').onclick = () => {
+      const deck = $('panel-deck');
+      if (deck) {
+        deck.classList.add('collapsed');
+        delete deck.dataset.explicitOpen;
+      }
+    };
+  }
+
+  // Secondary Menu Toggle & Dismissal
+  const menuBtn = $('menuBtn');
+  const secondaryMenu = $('secondaryMenu');
+  if (menuBtn && secondaryMenu) {
+    menuBtn.onclick = (e) => {
+      e.stopPropagation();
+      secondaryMenu.hidden = !secondaryMenu.hidden;
+    };
+    document.addEventListener('click', (e) => {
+      if (!secondaryMenu.hidden && !e.target.closest('.menu-dropdown-wrapper')) {
+        secondaryMenu.hidden = true;
+      }
+    });
+  }
+
   // Overview Camera button
   if ($('overBtn')) $('overBtn').onclick = () => SC.overview();
 
@@ -295,8 +338,26 @@ export function update() {
     if (e.key === 'Escape') {
       closeModal('shareBox');
       closeModal('settingsModal');
+      if ($('secondaryMenu')) $('secondaryMenu').hidden = true;
       const bp = $('briefPreview');
       if (bp) bp.remove();
+      // Close deck if in explore mode
+      if (ST.tab === 'site') {
+        const deck = $('panel-deck');
+        if (deck && !deck.classList.contains('collapsed')) {
+          deck.classList.add('collapsed');
+          delete deck.dataset.explicitOpen;
+          return;
+        }
+      }
+      // Close sites drawer if open
+      const sites = $('panel-sites');
+      if (sites && !sites.classList.contains('collapsed')) {
+        sites.classList.add('collapsed');
+        sites.inert = true;
+        $('sites-toggle-pill')?.classList.remove('active');
+        return;
+      }
       return;
     }
     if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName) && document.activeElement.type !== 'range') return;

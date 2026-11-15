@@ -1,25 +1,31 @@
 /* ==========================================================================
-   Polaris Window — Bottom Command Dock: Aerospace Timeline
+   Polaris Window — Minimal Floating Timeline Capsule
+   Minimalist Observatory Experience: Obsidian (#101113) & Lunar White (#E9E7E1)
    ========================================================================== */
 
 #timeline-dock {
   position: absolute;
-  bottom: 12px;
+  bottom: 14px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(840px, calc(100% - 32px));
-  height: 52px;
-  z-index: 30;
-  background: rgba(16, 17, 19, 0.94);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-pill);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.85);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: auto;
+}
+
+.timeline-capsule {
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  gap: 12px;
+  gap: 8px;
+  background: var(--obsidian);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 3px 12px;
+  height: 38px;
+  box-shadow: var(--shadow-panel);
 }
 
 .timeline-transport-controls {
@@ -27,70 +33,132 @@
   align-items: center;
   gap: 4px;
 }
-.transport-btn {
-  background: var(--obsidian-surface-2);
-  border: 1px solid var(--border-subtle);
-  color: var(--lunar-white);
-  width: 32px;
-  height: 32px;
+
+.transport-btn.primary {
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  padding: 0;
+  background: var(--lunar-white);
+  color: var(--obsidian);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-}
-.transport-btn:hover {
-  background: var(--obsidian-surface-3);
-  border-color: var(--border-strong);
-}
-.transport-btn.primary {
-  background: var(--lunar-white);
-  color: var(--obsidian);
-  border-color: var(--lunar-white);
-  font-size: 13px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
 .transport-btn.primary:hover {
   background: #ffffff;
+  box-shadow: 0 0 8px rgba(233, 231, 225, 0.4);
 }
 
 .step-btn {
-  background: var(--obsidian-surface-1);
-  border: 1px solid var(--border-subtle);
+  background: transparent;
+  border: none;
   color: var(--text-secondary);
-  font-size: 10px;
-  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
   padding: 4px 6px;
+  cursor: pointer;
   border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
 }
-
-.timeline-slider-track {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-#time {
-  width: 100%;
-  cursor: ew-resize;
-  accent-color: var(--lunar-white);
+.step-btn:hover {
+  color: var(--lunar-white);
 }
 
 .timeline-clock-readout {
   display: flex;
   align-items: center;
-  gap: 6px;
+  position: relative;
+  padding: 0 4px;
+  border-left: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.timeline-date-badge {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--lunar-white);
   white-space: nowrap;
-}
-#timeInput {
-  background: var(--obsidian-surface-1);
-  border: 1px solid var(--border-subtle);
-  font-size: 11px;
-  padding: 3px 6px;
+  padding: 2px 6px;
   border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.timeline-date-badge:hover {
+  background: var(--obsidian-surface-hover);
+}
+
+#timeInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
+.timeline-speed-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.speed-select {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  outline: none;
+  padding: 2px;
+}
+.speed-select:hover {
   color: var(--lunar-white);
-  width: 140px;
+}
+.speed-select option {
+  background: var(--obsidian);
+  color: var(--lunar-white);
+}
+
+/* Slim Interactive Track Slider */
+.timeline-slider-track {
+  width: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-slider-track input[type="range"] {
+  width: 100%;
+  height: 3px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(233, 231, 225, 0.2);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.timeline-slider-track input[type="range"]:hover {
+  background: rgba(233, 231, 225, 0.4);
+}
+.timeline-slider-track input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--lunar-white);
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+}
+.timeline-slider-track input[type="range"]::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--lunar-white);
+  border: none;
+  cursor: pointer;
 }

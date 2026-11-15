@@ -20,7 +20,7 @@
 </head>
 <body class="explore">
 
-<!-- Command Header -->
+<!-- Minimalist Header -->
 <header>
   <div class="brand-block">
     <div class="brand-mark">
@@ -30,10 +30,7 @@
         <circle cx="22" cy="9" r="2.2" fill="#E9E7E1"/>
       </svg>
     </div>
-    <div class="brand-text">
-      <span class="brand-title">Polaris Window</span>
-      <span class="brand-sub">Lunar South Pole Landing Planner · NASA Elevation Data</span>
-    </div>
+    <span class="brand-title">Polaris Window</span>
   </div>
 
   <!-- Primary 3 Destinations Navigation -->
@@ -43,63 +40,87 @@
     <button id="nav-science" data-dest="science" title="Methodology, calculations, and NASA ground-truth validation">How It Works</button>
   </nav>
 
-  <!-- Header Actions & Utilities -->
+  <!-- Header Actions & Secondary Menu -->
   <div class="header-actions">
-    <div class="seg" id="layerSeg" title="Map View Layer">
-      <button data-layer="light" class="on" title="Live sunlight and real shadows">Live Sun</button>
-      <button data-layer="heat" title="Terrain illumination heatmap">Heatmap</button>
+    <button id="sites-toggle-pill" class="header-pill-btn" aria-label="Toggle Landing Sites Drawer" title="Browse landing locations">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="12 8 8 12 12 16 16 12 12 8"></polygon></svg>
+      <span>Locations</span>
+      <span class="site-count-badge" id="siteCountBadge">13</span>
+    </button>
+    <button id="shareBtn" class="header-pill-btn" title="Share this exact view with a link or QR code">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+      <span>Share</span>
+    </button>
+    <div class="menu-dropdown-wrapper">
+      <button id="menuBtn" class="header-icon-btn" aria-label="More Options" title="More Options">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>
+      </button>
+      <div id="secondaryMenu" class="dropdown-menu" hidden>
+        <div class="dropdown-section-title">Map Layer</div>
+        <div class="seg" id="layerSeg" title="Map View Layer">
+          <button data-layer="light" class="on" title="Live sunlight and real shadows">Live Sun</button>
+          <button data-layer="heat" title="Terrain illumination heatmap">Heatmap</button>
+        </div>
+        <div class="dropdown-divider"></div>
+        <button id="tourBtn" class="dropdown-item">1-Minute Tour</button>
+        <a href="learn.html" class="dropdown-item">Classroom Missions ↗</a>
+        <button id="settingsBtn" class="dropdown-item">Display Settings</button>
+      </div>
     </div>
-    <button id="tourBtn" class="nav-pill-btn" title="Take a 1-minute guided tour">Tour</button>
-    <a href="learn.html" class="nav-pill-btn" title="Classroom missions for students">Classroom</a>
-    <button id="shareBtn" class="nav-pill-btn" title="Share this exact view with a link or QR code">Share</button>
-    <button id="settingsBtn" class="nav-pill-btn" title="Display and view settings">Settings</button>
   </div>
 </header>
 
 <!-- Main App Shell -->
 <main id="app-shell">
-  <!-- 3D Lunar Terrain Centerpiece Canvas -->
+  <!-- 3D Lunar Terrain Centerpiece Canvas (Dominates Viewport) -->
   <div id="view3d"></div>
 
   <!-- 3D Interactive Markers Container -->
   <div id="labels"></div>
 
-  <!-- HUD Telemetry Overlay -->
-  <div id="hud-overlay">
-    <div class="hud-telemetry-badge">
-      <div class="hud-site-title">
-        <span class="status-dot"></span>
-        <span id="hudSite">Connecting Ridge</span>
+  <!-- Discreet Floating Selected-Site Card (Explore Mode) -->
+  <div id="site-summary-card" class="site-summary-card" aria-label="Selected Location Summary">
+    <div class="summary-header">
+      <div class="summary-title-row">
+        <h2 id="siteName" class="site-card-title">Connecting Ridge</h2>
+        <span id="siteTypeBadge" class="site-type-badge artemis">NASA Artemis III Region</span>
+        <span id="siteElevationBadge" class="site-type-badge mono">1.84 km elev</span>
       </div>
-      <div id="hudSun" class="hud-site-coords">Calculating position…</div>
+      <div id="hudSun" class="summary-hud-sun" style="display:none;"></div>
     </div>
-    <a id="trust" href="#" class="hud-trust-tag" title="Inspect NASA Ground-Truth Validation">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-      Matches NASA Maps (r = 0.99)
-    </a>
-    <div id="legend"></div>
-  </div>
 
-  <!-- Non-blocking Initial Onboarding Banner -->
-  <div id="intro-banner">
-    <div class="intro-text">
-      <b>Find when and where to land on the Moon.</b> Built with NASA LOLA terrain and SPICE orbital data.
+    <!-- The 3 Primary Decision Metrics -->
+    <div class="metrics-grid-primary">
+      <div class="metric-card sun">
+        <span class="metric-label">Sunlight</span>
+        <span id="metricSunValue" class="metric-value">--%</span>
+        <span id="metricSunSub" class="metric-sub">Average sunlit time</span>
+      </div>
+      <div class="metric-card earth">
+        <span class="metric-label">Direct Earth View</span>
+        <span id="metricEarthValue" class="metric-value">--%</span>
+        <span id="metricEarthSub" class="metric-sub">Radio contact</span>
+      </div>
+      <div class="metric-card slope">
+        <span class="metric-label">Ground Slope</span>
+        <span id="metricSlopeValue" class="metric-value">--°</span>
+        <span id="metricSlopeSub" class="metric-sub">Safe limit (&lt;8°)</span>
+      </div>
     </div>
-    <div class="intro-actions">
-      <button id="introTourBtn" class="intro-btn primary-action">1-Minute Tour</button>
-      <button id="introDismissBtn" class="intro-btn panel-icon-btn" title="Dismiss banner">✕</button>
+
+    <!-- Actions Row -->
+    <div class="summary-actions-row">
+      <button id="primaryFindWindowBtn" class="action-banner-btn primary-action">
+        Find Landing Dates for This Site →
+      </button>
+      <button id="openDetailsBtn" class="secondary-action-btn" title="Inspect horizon silhouette, calendar and detailed telemetry">
+        Site Details &amp; Horizons ›
+      </button>
     </div>
   </div>
-
-  <!-- Floating Site Browser Toggle Button (Visible when drawer is closed) -->
-  <button id="sites-toggle-pill" aria-label="Toggle Landing Sites Drawer">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="12 8 8 12 12 16 16 12 12 8"></polygon></svg>
-    <span>Locations</span>
-    <span class="site-count-badge" id="siteCountBadge">14</span>
-  </button>
 
   <!-- Floating Left Panel: Landing Site Browser -->
-  <aside id="panel-sites">
+  <aside id="panel-sites" class="collapsed" inert>
     <div class="panel-header-bar">
       <span class="panel-header-title">Landing Locations</span>
       <div style="display:flex;gap:4px">
@@ -126,8 +147,13 @@
     </div>
   </aside>
 
-  <!-- Floating Right Panel: Mission Deck (Explore, Plan, Science) -->
-  <aside id="panel-deck">
+  <!-- Contextual Panel / Mission Deck (Explore Details, Plan, Science) -->
+  <aside id="panel-deck" class="collapsed">
+    <div class="panel-header-bar">
+      <span id="deckPanelTitle" class="panel-header-title">Mission Details</span>
+      <button id="deckCloseBtn" class="panel-icon-btn" title="Close details panel">✕</button>
+    </div>
+
     <!-- Hidden legacy compatibility navigation for deep-links and existing JS -->
     <nav id="tabs" style="display:none;" aria-hidden="true">
       <button data-tab="site" class="on"></button>
@@ -147,47 +173,11 @@
     <div class="deck-body">
 
       <!-- =============================================================== -->
-      <!-- DESTINATION 1: EXPLORE (Tab: site)                              -->
+      <!-- DESTINATION 1: EXPLORE DETAILS (Tab: site)                      -->
       <!-- =============================================================== -->
       <div class="tab on" id="tab-site">
-        <!-- Site Header Card -->
-        <div class="site-card-header">
-          <div class="site-badge-row">
-            <span id="siteTypeBadge" class="site-type-badge">NASA Artemis III Region</span>
-            <span id="siteElevationBadge" class="site-type-badge mono">1.84 km elev</span>
-          </div>
-          <h2 id="siteName" class="site-card-title">Connecting Ridge</h2>
-          <div id="siteMeta" class="site-card-coords">lat 89.44°S, lon 137.2°E</div>
-        </div>
-
-        <!-- The 3 Primary Decision Metrics -->
-        <div class="metrics-grid-primary">
-          <div class="metric-card sun">
-            <span class="metric-label">Sunlight</span>
-            <span id="metricSunValue" class="metric-value">--%</span>
-            <span id="metricSunSub" class="metric-sub">Average sunlit time</span>
-          </div>
-          <div class="metric-card earth">
-            <span class="metric-label">Direct Earth View</span>
-            <span id="metricEarthValue" class="metric-value">--%</span>
-            <span id="metricEarthSub" class="metric-sub">Radio contact</span>
-          </div>
-          <div class="metric-card slope">
-            <span class="metric-label">Ground Slope</span>
-            <span id="metricSlopeValue" class="metric-value">--°</span>
-            <span id="metricSlopeSub" class="metric-sub">Safe limit (&lt;8°)</span>
-          </div>
-        </div>
-
-        <!-- Prominent Primary Call-to-Action -->
-        <div class="action-banner-primary">
-          <div class="action-banner-text">
-            Search for the best dates to land at this site based on continuous solar power and direct radio view to Earth.
-          </div>
-          <button id="primaryFindWindowBtn" class="action-banner-btn">
-            Find Landing Dates for This Site →
-          </button>
-        </div>
+        <!-- Site Metadata & Links -->
+        <div id="siteMeta" class="site-card-coords" style="margin-bottom:8px;">lat 89.44°S, lon 137.2°E</div>
 
         <!-- Live Site Assessment / Verdict -->
         <div id="verdict"></div>
@@ -361,7 +351,7 @@
               </details>
             </div>
 
-            <button class="primary-action" id="wRun" style="width:100%;margin-top:4px;">
+            <button class="primary-action" id="wRun" style="width:100%;margin-top:8px;">
               Find Best Landing Dates
             </button>
 
@@ -485,25 +475,30 @@
     </div>
   </aside>
 
-  <!-- Bottom Command Dock: Aerospace Timeline -->
+  <!-- Minimal Floating Timeline Capsule -->
   <footer id="timeline-dock" role="toolbar" aria-label="Timeline Transport Controls">
-    <div class="timeline-transport-controls">
-      <button id="tBack" class="step-btn" title="Step backward 1 day (Shift+Left)">-1d</button>
-      <button id="play" class="transport-btn primary" title="Play / Pause Timeline (Space)" aria-label="Play or pause">▶</button>
-      <button id="tFwd" class="step-btn" title="Step forward 1 day (Shift+Right)">+1d</button>
-      <select id="speed" class="step-btn" title="Simulation Speed">
-        <option value="1">1 h/f</option>
-        <option value="4" selected>4 h/f</option>
-        <option value="12">12 h/f</option>
-      </select>
-    </div>
-
     <div class="timeline-slider-track">
       <input type="range" id="time" min="0" max="1" value="0" aria-label="Timeline Date and Time">
     </div>
+    <div class="timeline-capsule">
+      <div class="timeline-transport-controls">
+        <button id="tBack" class="step-btn" title="Step backward 1 day (Shift+Left)">-1d</button>
+        <button id="play" class="transport-btn primary" title="Play / Pause Timeline (Space)" aria-label="Play or pause">▶</button>
+        <button id="tFwd" class="step-btn" title="Step forward 1 day (Shift+Right)">+1d</button>
+      </div>
 
-    <div class="timeline-clock-readout">
-      <input type="datetime-local" id="timeInput" step="3600" aria-label="Exact UTC Timestamp">
+      <div class="timeline-clock-readout" id="timelineClockReadout" title="Simulation UTC timestamp">
+        <span id="timelineDateBadge" class="timeline-date-badge">Loading date…</span>
+        <input type="datetime-local" id="timeInput" step="3600" aria-label="Exact UTC Timestamp">
+      </div>
+
+      <div class="timeline-speed-wrapper">
+        <select id="speed" class="speed-select" title="Simulation Speed">
+          <option value="1">1 h/f</option>
+          <option value="4" selected>4 h/f</option>
+          <option value="12">12 h/f</option>
+        </select>
+      </div>
     </div>
   </footer>
 
@@ -585,9 +580,6 @@
   <p id="loadMsg" style="margin-top:14px;color:var(--text-secondary);font-size:12px;">Loading NASA Moon terrain…</p>
   <div class="pbar"><div id="pfill"></div></div>
 </div>
-
-<!-- Kept for backward compatibility, hidden by default -->
-<div id="welcome" hidden></div>
 
 <script type="module" src="js/main.js"></script>
 </body>

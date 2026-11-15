@@ -1,5 +1,6 @@
 // ==========================================================================
 // Polaris Window — Site Selection, Drawer Filtering & Custom Site Creation
+// Minimalist Observatory Experience: Obsidian (#101113) & Lunar White (#E9E7E1)
 // ==========================================================================
 
 import { $, $$, ST, site } from './state.js';
@@ -15,16 +16,25 @@ export function initSiteSelector(onSelect) {
   const toggleSites = (show) => {
     const p = $('panel-sites');
     const pill = $('sites-toggle-pill');
-    if (!p || !pill) return;
+    if (!p) return;
     const isClosed = p.classList.contains('collapsed');
     const nextState = show !== undefined ? show : isClosed;
     p.classList.toggle('collapsed', !nextState);
     p.inert = !nextState;
-    pill.style.display = nextState ? 'none' : 'flex';
+    if (pill) pill.classList.toggle('active', nextState);
+
+    // Rule of one drawer: if opening sites panel, close contextual deck if open in explore
+    if (nextState) {
+      const deck = $('panel-deck');
+      if (deck && ST.tab === 'site') {
+        deck.classList.add('collapsed');
+        delete deck.dataset.explicitOpen;
+      }
+    }
   };
 
   const pill = $('sites-toggle-pill');
-  if (pill) pill.onclick = () => toggleSites(true);
+  if (pill) pill.onclick = () => toggleSites();
 
   const closeBtn = $('sites-close-btn') || $('sitesCloseBtn');
   if (closeBtn) closeBtn.onclick = () => toggleSites(false);
@@ -77,27 +87,29 @@ export function renderSiteList() {
   const q = ST.searchQuery.toLowerCase().trim();
   let list = allSites();
 
-  // Category filter
   if (ST.siteFilter === 'artemis') list = list.filter(s => s.artemis);
   else if (ST.siteFilter === 'science') list = list.filter(s => !s.artemis && !s.custom && !s.clps);
   else if (ST.siteFilter === 'clps') list = list.filter(s => s.clps);
-  else if (ST.siteFilter === 'custom') list = list.filter(s => s.custom);
 
-  // Search filter
   if (q) {
-    list = list.filter(s => s.name.toLowerCase().includes(q) || s.lat.toFixed(2).includes(q) || s.lon.toFixed(1).includes(q));
+    list = list.filter(s =>
+      s.name.toLowerCase().includes(q) ||
+      (s.note && s.note.toLowerCase().includes(q)) ||
+      (s.story && s.story.toLowerCase().includes(q)) ||
+      `${s.lat.toFixed(2)} ${s.lon.toFixed(2)}`.includes(q)
+    );
   }
 
   const badge = $('siteCountBadge');
-  if (badge) badge.textContent = allSites().length;
+  if (badge) badge.textContent = list.length;
 
   const li = s => `
-    <li class="site-item ${s.id === ST.site ? 'active' : ''}" data-id="${s.id}" tabindex="0" role="option" aria-selected="${s.id === ST.site}">
-      <div class="site-item-info">
-        <span class="site-item-name">${s.name}</span>
-        <span class="site-item-coords">${Math.abs(s.lat).toFixed(2)}°S, ${s.lon.toFixed(1)}°E · ${(s.elev / 1000).toFixed(2)} km</span>
+    <li class="site-item ${s.id === ST.site ? 'active' : ''}" data-id="${s.id}" role="option" aria-selected="${s.id === ST.site}">
+      <div>
+        <div class="site-item-name">${s.name}</div>
+        <div class="site-item-sub">lat ${Math.abs(s.lat).toFixed(2)}°S, lon ${s.lon.toFixed(1)}°E · ${(s.elev / 1000).toFixed(1)} km</div>
       </div>
-      ${s.custom ? '<button class="site-item-del" data-del="1" title="Remove custom site">✕</button>' : ''}
+      ${s.custom ? `<button class="site-del-btn" data-del="1" title="Delete custom site">✕</button>` : ''}
     </li>`;
 
   const A = list.filter(s => s.artemis);
@@ -122,9 +134,15 @@ export function renderSiteList() {
 
 export function selectSite(id, fly = true) {
   ST.site = id;
-  $('panel-sites').classList.add('collapsed');
-  $('panel-sites').inert = true;
-  $('sites-toggle-pill').style.display = 'flex';
+  // Always close site list on mobile / tablet or after selection
+  const p = $('panel-sites');
+  if (p) {
+    p.classList.add('collapsed');
+    p.inert = true;
+  }
+  const pill = $('sites-toggle-pill');
+  if (pill) pill.classList.remove('active');
+
   renderSiteList();
   const s = site();
   if (fly && s) SC.flyTo(s, false);

@@ -1,23 +1,49 @@
 /* ==========================================================================
-   Polaris Window — Floating Right Panel: Mission Deck & Accordions
+   Polaris Window — Contextual Mission Deck & Details Drawer
+   Minimalist Observatory Experience: Obsidian (#101113) & Lunar White (#E9E7E1)
    ========================================================================== */
 
 #panel-deck {
   position: absolute;
-  top: 14px;
-  bottom: 74px;
-  right: 16px;
+  top: 56px;
+  bottom: 68px;
+  right: 20px;
   width: 440px;
-  z-index: 20;
-  background: rgba(16, 17, 19, 0.94);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  max-width: calc(100vw - 40px);
+  z-index: 25;
+  background: var(--obsidian);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-panel);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: transform var(--transition-normal), opacity var(--transition-normal);
+  pointer-events: auto;
+}
+
+#panel-deck.collapsed {
+  transform: translateX(calc(100% + 30px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.panel-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--obsidian-surface-1);
+  flex-shrink: 0;
+}
+
+.panel-header-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--lunar-white);
 }
 
 .deck-body {
@@ -26,7 +52,7 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 .deck-body::-webkit-scrollbar {
   width: 4px;
@@ -45,12 +71,12 @@
 /* Collapsible Secondary Tool Drawers */
 .accordion-section {
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--obsidian-surface-1);
   overflow: hidden;
 }
 .accordion-header {
-  padding: 10px 12px;
+  padding: 9px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -60,28 +86,29 @@
   transition: background var(--transition-fast);
 }
 .accordion-header:hover {
-  background: var(--obsidian-surface-2);
+  background: var(--obsidian-surface-hover);
 }
 .accordion-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .accordion-arrow {
+  font-size: 9px;
   color: var(--text-muted);
-  font-size: 10px;
   transition: transform var(--transition-fast);
 }
 .accordion-section.open .accordion-arrow {
   transform: rotate(180deg);
 }
 .accordion-content {
+  display: none;
   padding: 12px;
   border-top: 1px solid var(--border-subtle);
-  display: none;
+  background: var(--obsidian);
 }
 .accordion-section.open .accordion-content {
   display: block;

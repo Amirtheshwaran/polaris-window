@@ -1,15 +1,16 @@
 /* ==========================================================================
-   Polaris Window — Main Viewport Shell, 3D Canvas & HUD Layout
+   Polaris Window — Main Viewport Shell, 3D Canvas & Loading Overlay
+   Minimalist Observatory Experience: Obsidian (#101113) & Lunar White (#E9E7E1)
    ========================================================================== */
 
 main#app-shell {
   display: flex;
-  height: calc(100vh - 48px);
+  height: calc(100vh - 44px);
   position: relative;
   overflow: hidden;
 }
 
-/* 3D Centerpiece Viewport */
+/* 3D Centerpiece Viewport — Occupies 100% of Canvas Area */
 #view3d {
   position: absolute;
   inset: 0;
@@ -22,108 +23,100 @@ main#app-shell {
   display: block;
 }
 
-/* HUD Overlay on 3D Viewport */
-#hud-overlay {
-  position: absolute;
-  top: 14px;
-  left: 16px;
-  z-index: 10;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-width: 360px;
-}
-.hud-telemetry-badge {
-  background: rgba(16, 17, 19, 0.90);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 8px 12px;
-  box-shadow: var(--shadow-sm);
-  pointer-events: auto;
-}
-.hud-site-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--lunar-white);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.hud-site-title .status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--lunar-white);
-  box-shadow: 0 0 8px rgba(233, 231, 225, 0.6);
-}
-.hud-site-coords {
-  font-size: 11px;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  margin-top: 3px;
-}
-
-.hud-trust-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--text-secondary);
-  background: rgba(16, 17, 19, 0.85);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-pill);
-  padding: 3px 10px;
-  text-decoration: none;
-  pointer-events: auto;
-  transition: all var(--transition-fast);
-}
-.hud-trust-tag:hover {
-  background: var(--obsidian-surface-2);
-  border-color: var(--border-medium);
-  color: var(--lunar-white);
-  text-decoration: none;
-}
-
-/* 3D Scene Interactive Overlay Labels */
+/* 3D Interactive Pin Labels Container */
 #labels {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 5;
-}
-.lbl {
   position: absolute;
-  transform: translate(-50%, -140%);
-  font-size: 11px;
-  font-weight: 500;
-  background: rgba(16, 17, 19, 0.88);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
-  padding: 2px 7px;
-  border-radius: var(--radius-pill);
-  white-space: nowrap;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.site-label {
+  position: absolute;
+  transform: translate(-50%, -100%);
   pointer-events: auto;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: opacity var(--transition-fast);
 }
-.lbl:hover {
-  background: var(--obsidian-surface-2);
-  border-color: var(--border-medium);
-  color: var(--lunar-white);
+.site-label-pin {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lunar-white);
+  border: 1px solid var(--obsidian);
+  box-shadow: 0 0 6px rgba(233, 231, 225, 0.6);
 }
-.lbl.on {
-  border-color: var(--lunar-white);
-  color: var(--lunar-white);
-  background: rgba(16, 17, 19, 0.98);
-  box-shadow: 0 0 10px rgba(233, 231, 225, 0.25);
+.site-label-text {
+  font-size: 10px;
   font-weight: 600;
+  color: var(--lunar-white);
+  background: var(--obsidian);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+  margin-bottom: 2px;
+  white-space: nowrap;
 }
-.lbl.geo {
-  background: rgba(21, 22, 25, 0.8);
-  border-color: var(--border-subtle);
-  color: var(--text-muted);
+.site-label.active .site-label-pin {
+  background: #ffffff;
+  box-shadow: 0 0 10px #ffffff;
+  transform: scale(1.3);
+}
+
+/* Real NASA Terrain Loading Screen */
+#loading {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--obsidian);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+}
+.spin {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--lunar-white);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.pbar {
+  width: 180px;
+  height: 2px;
+  background: var(--border-subtle);
+  border-radius: 2px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+#pfill {
+  width: 0%;
+  height: 100%;
+  background: var(--lunar-white);
+  transition: width 0.15s ease;
+}
+
+#toast {
+  position: fixed;
+  bottom: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--obsidian-surface-3);
+  color: var(--lunar-white);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-pill);
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: var(--shadow-panel);
+  z-index: 1000;
   pointer-events: none;
 }

@@ -129,8 +129,8 @@ export function renderSiteTab() {
   if ($('metricSlopeValue')) {
     if (s.slope != null) {
       $('metricSlopeValue').textContent = `${s.slope}°`;
-      $('metricSlopeSub').textContent = s.slope <= SAFE_SLOPE ? `Within ${SAFE_SLOPE}° limit` : `Above ${SAFE_SLOPE}° limit`;
-      $('metricSlopeSub').style.color = s.slope <= SAFE_SLOPE ? 'var(--safe-green)' : 'var(--alert-red)';
+      $('metricSlopeSub').textContent = s.slope <= SAFE_SLOPE ? `Safe slope (<${SAFE_SLOPE}°)` : `Steep slope (>${SAFE_SLOPE}°)`;
+      $('metricSlopeSub').style.color = 'var(--text-muted)';
     } else {
       $('metricSlopeValue').textContent = '–';
       $('metricSlopeSub').textContent = 'DEM Boundary';

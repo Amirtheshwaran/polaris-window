@@ -20,6 +20,9 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 - **Side-by-side compare:** 2 to 4 sites, or up to 4 landing dates at one site, with sunlight %, Earth visibility %, sun AND Earth %, longest darkness, longest blackout and estimated solar energy, plus charts for each lunation over a year.
 - **Heatmap mode:** colors the whole region by sunlight, Earth visibility or both, for any date range, computed live in the browser.
 - **Custom sites:** click anywhere on the terrain to add a site with full analysis.
+- **Will your lander survive?** Pick a solar panel, battery and power use, and the battery is simulated hour by hour with the real sunlight at that site and date.
+- **Sight-lines and ice map:** lines from the site to the Sun and Earth show when terrain blocks them, and a one-click map shows where the Sun never shines (cold traps for water ice).
+- **Real CLPS case study:** IM-2 Athena (2025). Its site and date were good, and it was lost to a small crater and a tip-over.
 - **Mission brief:** one click produces a printable or PDF report for the chosen site and date, with sunlight, Earth visibility, longest night and blackout, safety margin, panorama and a day-by-day table.
 - **Shareable links:** every site, date, tab and heatmap is encoded in the URL, so a teacher can send a class to the exact moment the Sun clears a crater rim.
 - **Explore mode with a guided tour** for the public and classrooms, and **Planner mode** for engineers.

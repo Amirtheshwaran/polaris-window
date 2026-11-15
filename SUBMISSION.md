@@ -24,7 +24,7 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 - **Sight-lines and ice map:** lines from the site to the Sun and Earth show when terrain blocks them, and a one-click map shows where the Sun never shines (cold traps for water ice).
 - **Real CLPS case study:** IM-2 Athena (2025). Its site and date were good, and it was lost to a small crater and a tip-over.
 - **Mission brief:** one click produces a printable or PDF report for the chosen site and date, with sunlight, Earth visibility, longest night and blackout, safety margin, panorama and a day-by-day table.
-- **Shareable links:** every site, date, tab and heatmap is encoded in the URL, so a teacher can send a class to the exact moment the Sun clears a crater rim.
+- **Shareable links:** every site, date, tab and heatmap is encoded in the URL, so a teacher can send a class to the exact moment the Sun clears a crater rim. The share dialog also shows a QR code for projectors, and the guided tour can read itself aloud.
 - **Explore mode with a guided tour** for the public and classrooms, and **Planner mode** for engineers.
 - **Classroom missions (learn.html):** six 5-minute, printable missions for ages 10+. Each opens the app at the exact place and date, with a question and an answer (for example, find the crater that never sees the Sun, or be the mission planner).
 - **Landing safety:** a slope layer from LOLA and a "best landing spots" map (sun + Earth + ground flatter than 8°).
@@ -55,7 +55,7 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 - CSA Moon Exploration portal (background on Artemis and lunar exploration).
 - Mazarico, E., Neumann, G. A., Smith, D. E., Zuber, M. T., Torrence, M. H. (2011). Illumination conditions of the lunar polar regions using LOLA topography. *Icarus* 211, 1066–1081.
 - McClernan, M.T. (2024). Down Selected Artemis III Candidate Landing Site Navigational Grids. USGS data release, https://doi.org/10.5066/P1MEQ6UK, the official footprints of the nine NASA Artemis III candidate landing regions (Oct 2024).
-- Open-source libraries: Three.js (MIT), Chart.js (MIT), NumPy, SciPy, Numba, SpiceyPy, Matplotlib (BSD/MIT).
+- Open-source libraries: Three.js (MIT), Chart.js (MIT), qrcode-generator (MIT, Kazuhiko Arase), NumPy, SciPy, Numba, SpiceyPy, Matplotlib (BSD/MIT).
 
 ---
 

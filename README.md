@@ -36,7 +36,7 @@ Polaris Window is a browser-based mission planner for the lunar south pole. It u
 | **Drop your own site** | Click anywhere on the terrain. Custom sites get full statistics, a panorama and window ranking. |
 | **Checked against NASA** | Our sunlight map reproduces NASA PGDA's published south-pole illumination map with r = 0.990 (mean error 1.5 points), our Earth-visibility (comms) map reproduces NASA's Earth-visibility map with r = 0.992 (mean error 1.8 points), and our Sun and Earth elevations match JPL Horizons to 0.001°. |
 | **Mission brief** | One click produces a printable or PDF report for the chosen site and landing date: key numbers, safety margin, panorama, 60-day outlook and a day-by-day table. |
-| **Shareable links** | Every view (site, date, tab, heatmap, custom site) is encoded in the URL, so educators can send a class to an exact moment. |
+| **Shareable links + QR** | Every view (site, date, tab, heatmap, custom site) is encoded in the URL. The share dialog also shows a QR code, so a teacher can put it on a projector and students open the exact moment on their phones. |
 | **Explore / Planner modes + guided tour** | An 8-step narrated tour for classrooms and the public, and full controls for planners. |
 
 ## How it works

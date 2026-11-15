@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="css/style.css">
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js","three/addons/controls/OrbitControls.js":"./vendor/OrbitControls.js"}}</script>
 <script src="vendor/chart.umd.min.js"></script>
+<script src="vendor/qrcode.js" defer></script>
 </head>
 <body>
 <header>
@@ -53,7 +54,7 @@
       <div id="hudSun"></div>
       <a id="trust" href="#" title="See how our results compare with NASA">✅ Matches NASA sunlight and Earth maps (r = 0.99)</a>
     </div>
-    <div id="tourBox" hidden><p id="tourText"></p><div><button id="tourPrev">‹</button><span id="tourStep"></span><button id="tourNext">Next ›</button><button id="tourEnd">✕</button></div></div>
+    <div id="tourBox" hidden><p id="tourText"></p><div><button id="tourSpeak" title="Read the tour aloud" aria-pressed="false">🔊 Read aloud</button><button id="tourPrev">‹</button><span id="tourStep"></span><button id="tourNext">Next ›</button><button id="tourEnd">✕</button></div></div>
     <div id="tlHint" hidden>👇 Drag the timeline (or press ▶) to move the Sun and watch the shadows</div>
     <div id="timeline">
       <button id="play" title="Play / pause" aria-label="Play or pause time">▶</button>
@@ -173,6 +174,13 @@
 </main>
 <div id="labels"></div>
 <div id="toast" hidden></div>
+<div id="shareBox" hidden><div class="wcard">
+  <h2>🔗 Share this exact view</h2>
+  <p class="meta">Anyone who opens this link sees the same site, date and tab. Teachers: put the QR code on the projector and students can scan it.</p>
+  <div class="row"><input id="shareUrl" readonly style="flex:1"><button id="shareCopy">Copy</button></div>
+  <div id="shareQr"></div>
+  <div class="row" style="justify-content:flex-end"><button id="shareClose">Close</button></div>
+</div></div>
 <div id="caption" hidden></div>
 <div id="loading"><div class="spin"></div><p id="loadMsg">Loading real NASA Moon terrain…</p><div class="pbar"><div id="pfill"></div></div></div>
 <div id="welcome" hidden><div class="wcard">

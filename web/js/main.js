@@ -220,7 +220,7 @@ function renderAbout() {
   <h3>Assumptions</h3><p class="meta">Observer 2 m above ground. Sunlight counts partial solar disc. Earth "visible" = Earth's center above the terrain horizon (direct-to-Earth line of sight). Power: 10 m² vertical sun-tracking array, 30% efficiency. Region pins are our model's best spots, not NASA-designated landing points.</p>
   <h3>Case study: IM-2 Athena (CLPS, March 2025)</h3><p class="meta">At Athena's reported landing location our model gives 100% sunlight and Earth visibility for its planned 10-day mission, on a 2.6° slope, so the site and date were sound. Its long-term sunlight (46.8%) matches NASA's map (46.8%). The lander was lost to a small crater and a tip-over, below the 80 m resolution used here. That shows where high-resolution hazard mapping comes next.</p>
   <h3>Landing regions</h3><p class="meta">The nine NASA Artemis III candidate regions (announced October 2024) use the official USGS footprints (McClernan 2024, doi:10.5066/P1MEQ6UK). Mons Mouton Plateau uses an approximate 15 km box. Each pin is our best spot inside the region: the most sunlight and Earth visibility on ground flatter than 8°.</p>
-  <h3>Data</h3><p class="meta">NASA LRO LOLA (PDS Geosciences Node) · NASA/JPL NAIF SPICE · NASA PGDA Lunar Polar Illumination (Mazarico et al. 2011) · JPL Horizons. Built with Three.js, Chart.js, Python, NumPy, Numba, SpiceyPy.</p>`;
+  <h3>Data</h3><p class="meta">NASA LRO LOLA (PDS Geosciences Node) · NASA/JPL NAIF SPICE · NASA PGDA Lunar Polar Illumination (Mazarico et al. 2011) · JPL Horizons. Built with Three.js, Chart.js, qrcode-generator, Python, NumPy, Numba, SpiceyPy.</p>`;
 }
 
 // hours until the Sun (or Earth) next changes between visible / hidden, scanning the hourly series
@@ -324,7 +324,8 @@ const TOUR = [
   ['Every number is checked against NASA: our sunlight and Earth-visibility maps match NASA\'s published maps with r ≈ 0.99, and our Sun and Earth positions match JPL Horizons to 0.001°.', () => switchTab('valid')],
 ];
 let tourI = 0;
-function tour(i) { tourI = Math.max(0, Math.min(TOUR.length - 1, i)); $('tourBox').hidden = false; $('tourText').textContent = TOUR[tourI][0]; $('tourStep').textContent = `${tourI + 1} / ${TOUR.length}`; $('tourNext').textContent = tourI === TOUR.length - 1 ? 'Done' : 'Next ›'; TOUR[tourI][1](); }
+function say(t) { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'en-US'; u.rate = .98; speechSynthesis.speak(u); } catch (e) {} }
+function tour(i) { tourI = Math.max(0, Math.min(TOUR.length - 1, i)); $('tourBox').hidden = false; $('tourText').textContent = TOUR[tourI][0]; if (ST.speak) say(TOUR[tourI][0]); $('tourStep').textContent = `${tourI + 1} / ${TOUR.length}`; $('tourNext').textContent = tourI === TOUR.length - 1 ? 'Done' : 'Next ›'; TOUR[tourI][1](); }
 
 let playH;
 function play(on) {
@@ -404,9 +405,16 @@ function demo() {
   ['cFrom', 'cTo'].forEach(id => $(id).onchange = renderCompare);
   $$('#cmpMode button').forEach(b => b.onclick = () => { ST.cmpMode = b.dataset.c; $$('#cmpMode button').forEach(x => x.classList.toggle('on', x === b)); $('cmpSites').hidden = ST.cmpMode === 'dates'; $('cmpDates').hidden = ST.cmpMode !== 'dates'; renderCompare(); });
   ['dSite', 'dLen'].forEach(id => $(id).onchange = renderDates); $$('#dDates input').forEach(i => i.onchange = renderDates);
-  $('shareBtn').onclick = () => { writeHash(); navigator.clipboard?.writeText(location.href).then(() => toast('Link copied: anyone opening it sees this exact view'), () => prompt('Copy this link', location.href)); };
+  $('shareBtn').onclick = () => {
+    writeHash(); const url = location.href; $('shareUrl').value = url; $('shareBox').hidden = false;
+    try { const q = qrcode(0, 'M'); q.addData(url); q.make(); $('shareQr').innerHTML = q.createSvgTag({ cellSize: 4, margin: 4, scalable: true }); } catch (e) { $('shareQr').textContent = ''; }
+  };
+  $('shareCopy').onclick = () => { $('shareUrl').select(); navigator.clipboard?.writeText($('shareUrl').value).then(() => toast('Link copied'), () => document.execCommand('copy')); };
+  $('shareClose').onclick = () => $('shareBox').hidden = true;
+  $('shareBox').onclick = e => { if (e.target.id === 'shareBox') $('shareBox').hidden = true; };
+  $('tourSpeak').onclick = () => { ST.speak = !ST.speak; $('tourSpeak').setAttribute('aria-pressed', ST.speak); $('tourSpeak').classList.toggle('on', ST.speak); if (ST.speak) say(TOUR[tourI][0]); else speechSynthesis?.cancel(); };
   $('tourBtn').onclick = () => tour(0); $('tourNext').onclick = () => tourI === TOUR.length - 1 ? ($('tourBox').hidden = true) : tour(tourI + 1);
-  $('tourPrev').onclick = () => tour(tourI - 1); $('tourEnd').onclick = () => { $('tourBox').hidden = true; play(false); };
+  $('tourPrev').onclick = () => tour(tourI - 1); $('tourEnd').onclick = () => { $('tourBox').hidden = true; play(false); try { speechSynthesis.cancel(); } catch (e) {} };
   addEventListener('resize', () => ST.tab === 'site' && renderSiteTab());
   $$('#wPreset button').forEach(b => b.onclick = () => { preset(b.dataset.p); if ($('wOut').innerHTML) runWindows(); });
   if (!hadHash) $('welcome').hidden = false;

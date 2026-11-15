@@ -96,3 +96,4 @@ body.planner .stats{grid-template-columns:repeat(3,1fr)}
 #tlHint{position:absolute;bottom:62px;left:50%;transform:translateX(-50%);background:var(--sun);color:#111;font-weight:600;padding:6px 12px;border-radius:8px;z-index:5;animation:bob 1s ease-in-out infinite alternate}@keyframes bob{to{transform:translate(-50%,-5px)}}
 @media (prefers-reduced-motion: reduce){#tlHint{animation:none}}
 #hPresets{margin:6px 0}#hPresets button{font-size:12px}
+#shareBox{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;z-index:26;padding:16px}#shareBox .wcard{max-width:460px}#shareQr{display:flex;justify-content:center;margin:10px 0}#shareQr svg{width:220px;height:220px;background:#fff;border-radius:8px}#tourSpeak.on{border-color:var(--sun);color:var(--sun)}

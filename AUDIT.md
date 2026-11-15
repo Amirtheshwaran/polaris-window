@@ -1,12 +1,12 @@
 # Pre-submission audit — 15 November 2026
 
-Readiness: release candidate verified locally; ready for deployment to GitHub Pages.
+Readiness: release candidate & visual redesign verified locally; ready for deployment to GitHub Pages.
 
 ## Findings & Resolutions
 
-- BLOCKER (resolved): Inactive destination panels were isolated via `.tab { display: none; }` and `.tab.on { display: block; }`. Explore → Plan → Science routing verified.
-- HIGH (resolved): Deployed release synchronization gate. Verified release candidate prepared for deployment to `main` branch.
-- HIGH (resolved): Scientific claim rigor. Wording calibrated to landing dates and slope screening rather than operational certification. Physical limitations documented (observer 2 m, solar disc fraction, geometric line-of-sight, simplified battery model).
+- BLOCKER (resolved): Inactive destination panels isolated via `.tab { display: none; }` and `.tab.on { display: block; }`. Explore → Plan → Science routing verified.
+- HIGH (resolved): Visual redesign completed with strict monochrome design system: Obsidian `#101113` and Lunar White `#E9E7E1` exclusively. Neon gradients and colored button accents removed.
+- HIGH (resolved): Terminology simplified into plain-English labels suitable for non-technical visitors ("Explore the Pole", "Find a Landing Date", "How It Works", "Direct Earth view", "Ground slope", "Terrain horizon").
 - HIGH (resolved): Primary landing action properly sets selected-site scope (`wSites = 'sel'`) before evaluation, preventing duplicate search cycles.
 - MEDIUM (resolved): Mobile layout overlap resolved below 820px breakpoint (`#panel-deck` bottom dock, `#panel-sites` z-index 35, full `#timeInput` visibility).
 - MEDIUM (resolved): Mission-specific evaluation period (e.g. 14-day mission vs annual average) dynamically reflected in vital metrics and telemetry labels when inspecting a ranked window.
@@ -24,6 +24,7 @@ Ground-truth correlations: sunlight $r = 0.990$ (MAE 1.5%), Earth line-of-sight 
 
 ## Verification Summary
 
+- Strict Monochrome Palette: Obsidian `#101113` and Lunar White `#E9E7E1` verified across UI, shaders, canvas horizons, and Chart.js telemetry charts.
 - Syntax & Architecture: JS syntax validation passed across all modules (`data.js`, `main.js`, `pano.js`, `scene.js`).
 - Local Server & Assets: Zero missing assets, 100% 200 OK responses on local server `http://127.0.0.1:8000/`.
 - Full Journey: Explore → Plan → Science workflows verified end-to-end.

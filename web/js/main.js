@@ -6,7 +6,7 @@ const $ = id => document.getElementById(id), $$ = q => [...document.querySelecto
 const ST = { site: 'ridge', t: 0, tab: 'site', layer: 'light', mode: 'explore', cmp: ['ridge', 'a3_malapert_massif', 'a3_mons_mouton', 'a3_haworth'], playing: false, heat: null, siteFilter: 'all', searchQuery: '' };
 const ALIAS = { malapert: 'a3_malapert_massif', nobile: 'a3_nobile_rim_1', mouton: 'a3_mons_mouton', haworth: 'a3_haworth', degerlache: 'a3_de_gerlache_rim_2' };
 const site = () => allSites().find(s => s.id === ST.site) || D.sites[0];
-const COLORS = ['#f59e0b', '#38bdf8', '#10b981', '#f43f5e'];
+const COLORS = ['#E9E7E1', '#B8B6B0', '#888680', '#5E5D58'];
 let cmpChart, cmpChart2, rafPending = false;
 
 function toast(m) {
@@ -173,12 +173,12 @@ function update() {
     SC.setRays(s, st);
 
     $('hudSite').textContent = s.name;
-    const sunBadge = st.sun > 0.5 ? '<span class="hud-metric-pill sun">Sunlit</span>' : '<span style="color:var(--text-muted)">Shadow</span>';
-    const earthBadge = st.earth ? '<span class="hud-metric-pill earth">Earth visible</span>' : '<span style="color:var(--text-muted)">Earth blocked</span>';
+    const sunBadge = st.sun > 0.5 ? '<span style="color:var(--lunar-white);font-weight:600">Sunlit</span>' : '<span style="color:var(--text-muted)">Shadow</span>';
+    const earthBadge = st.earth ? '<span style="color:var(--lunar-white);font-weight:600">Earth in view</span>' : '<span style="color:var(--text-muted)">Earth blocked</span>';
 
     $('hudSun').innerHTML = `
       ${fmtDate(d).slice(0, 16)} UTC · Sun ${st.sel.toFixed(2)}° · Earth ${st.eel.toFixed(1)}°
-      <div style="display:flex;gap:8px;margin-top:4px;">${sunBadge} ${earthBadge}</div>
+      <div style="display:flex;gap:8px;margin-top:4px;">${sunBadge} · ${earthBadge}</div>
     `;
 
     if (ST.tab === 'site') renderSiteTab();
@@ -349,15 +349,15 @@ function runWindows() {
 
   $$('#wOut canvas').forEach(cv => {
     const r = res[+cv.dataset.i].r, dpr = devicePixelRatio, W = cv.width = cv.clientWidth * dpr, H = cv.height = 18 * dpr, g = cv.getContext('2d');
-    g.fillStyle = '#0f1725';
+    g.fillStyle = '#101113';
     g.fillRect(0, 0, W, H);
     r.curve.forEach((v, k) => {
       if (v > 0) {
-        g.fillStyle = `hsl(${35 + v * 0.4}, 85%, ${20 + v * 0.35}%)`;
+        g.fillStyle = `rgba(233, 231, 225, ${Math.min(1, 0.2 + v * 0.015)})`;
         g.fillRect(k / r.curve.length * W, 0, Math.ceil(W / r.curve.length) + 1, H);
       }
     });
-    g.fillStyle = '#f59e0b';
+    g.fillStyle = '#ffffff';
     r.picked.forEach(w => g.fillRect((w.a - r.a0) / r.step / r.curve.length * W - dpr, 0, 2 * dpr, H));
   });
 
@@ -452,12 +452,12 @@ function renderDates() {
       responsive: true,
       animation: false,
       plugins: {
-        title: { display: true, text: 'Sunlit hours per mission day', color: '#f3f5f9' },
-        legend: { labels: { color: '#9aa7bc', boxWidth: 10 } }
+        title: { display: true, text: 'Sunlit hours per mission day', color: '#E9E7E1' },
+        legend: { labels: { color: 'rgba(233, 231, 225, 0.7)', boxWidth: 10 } }
       },
       scales: {
-        x: { ticks: { color: '#64748b', maxTicksLimit: 8 }, grid: { color: '#1c2738' } },
-        y: { min: 0, max: 24, ticks: { color: '#64748b' }, grid: { color: '#1c2738' } }
+        x: { ticks: { color: 'rgba(233, 231, 225, 0.5)', maxTicksLimit: 8 }, grid: { color: 'rgba(233, 231, 225, 0.1)' } },
+        y: { min: 0, max: 24, ticks: { color: 'rgba(233, 231, 225, 0.5)' }, grid: { color: 'rgba(233, 231, 225, 0.1)' } }
       }
     }
   });
@@ -507,12 +507,12 @@ function renderCompare() {
     responsive: true,
     animation: false,
     plugins: {
-      title: { display: true, text: title, color: '#f3f5f9' },
-      legend: { labels: { color: '#9aa7bc', boxWidth: 10 } }
+      title: { display: true, text: title, color: '#E9E7E1' },
+      legend: { labels: { color: 'rgba(233, 231, 225, 0.7)', boxWidth: 10 } }
     },
     scales: {
-      x: { ticks: { color: '#64748b' }, grid: { color: '#1c2738' } },
-      y: { min: 0, max: ymax, ticks: { color: '#64748b' }, grid: { color: '#1c2738' } }
+      x: { ticks: { color: 'rgba(233, 231, 225, 0.5)' }, grid: { color: 'rgba(233, 231, 225, 0.1)' } },
+      y: { min: 0, max: ymax, ticks: { color: 'rgba(233, 231, 225, 0.5)' }, grid: { color: 'rgba(233, 231, 225, 0.1)' } }
     }
   });
 
@@ -585,11 +585,11 @@ function setLayer(l) {
   ST.layer = l;
   SC.setMode(l);
   $$('#layerSeg button').forEach(b => b.classList.toggle('on', b.dataset.layer === l));
-  const g = 'linear-gradient(90deg,#000004,#280b54,#65156e,#9f2a63,#d44842,#f57d15,#fac127,#fcffa4)';
+  const g = 'linear-gradient(90deg,#101113,#2d3038,#5c606d,#8e929f,#c6c5c0,#E9E7E1,#ffffff)';
   $('legend').innerHTML = l === 'heat' && ST.heat
     ? (ST.heat.metric === 'slope'
-        ? `<div style="font-size:11px;color:var(--text-muted)">Terrain Slope Scale</div><div class="bar" style="height:6px;border-radius:3px;margin:3px 0;background:${g}"></div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted)"><span>20°+ Steep</span><span>10°</span><span>0° Flat</span></div>`
-        : `<div style="font-size:11px;color:var(--text-muted)">${HEATL[ST.heat.metric]} Scale</div><div class="bar" style="height:6px;border-radius:3px;margin:3px 0;background:${g}"></div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted)"><span>0%</span><span>${pct((ST.heatMax || 1) / 2).replace('.0%', '%')}</span><span>${pct(ST.heatMax || 1).replace('.0%', '%')}</span></div>`)
+        ? `<div style="font-size:11px;color:var(--text-muted)">Terrain slope scale</div><div class="bar" style="height:6px;border-radius:3px;margin:3px 0;background:${g}"></div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted)"><span>20°+ steep</span><span>10°</span><span>0° flat</span></div>`
+        : `<div style="font-size:11px;color:var(--text-muted)">${HEATL[ST.heat.metric]} scale</div><div class="bar" style="height:6px;border-radius:3px;margin:3px 0;background:${g}"></div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted)"><span>0%</span><span>${pct((ST.heatMax || 1) / 2).replace('.0%', '%')}</span><span>${pct(ST.heatMax || 1).replace('.0%', '%')}</span></div>`)
     : '';
   update();
 }
@@ -766,17 +766,17 @@ function survival() {
   }
 
   $('svOut').innerHTML = dead < 0
-    ? `<div style="font-size:11px;color:var(--safe-green);background:var(--safe-green-subtle);padding:6px 10px;border-radius:var(--radius-sm);margin-top:6px;">Modeled battery supports the ${days}-day mission. Minimum reserve: ${Math.round(minE / (B * 10))}%.</div>`
-    : `<div style="font-size:11px;color:var(--alert-red);background:var(--alert-red-subtle);padding:6px 10px;border-radius:var(--radius-sm);margin-top:6px;">Battery depleted on Day ${Math.floor(dead / 24) + 1} (${fmtDate(tDate(a + dead)).slice(0, 10)}). Increase array size or select a higher illumination window.</div>`;
+    ? `<div style="font-size:11px;color:var(--text-primary);background:var(--obsidian-surface-2);border:1px solid var(--border-subtle);padding:6px 10px;border-radius:var(--radius-sm);margin-top:6px;">Lander battery supports the ${days}-day mission. Minimum reserve: ${Math.round(minE / (B * 10))}%.</div>`
+    : `<div style="font-size:11px;color:var(--text-muted);background:var(--obsidian-surface-2);border:1px solid var(--border-subtle);padding:6px 10px;border-radius:var(--radius-sm);margin-top:6px;">Battery depleted on Day ${Math.floor(dead / 24) + 1} (${fmtDate(tDate(a + dead)).slice(0, 10)}). Increase array size or select a sunnier landing date.</div>`;
 
   const cv = $('svChart'), dpr = devicePixelRatio || 1, W = cv.width = cv.clientWidth * dpr, H = cv.height = 90 * dpr, g = cv.getContext('2d');
-  g.fillStyle = '#080c14';
+  g.fillStyle = '#101113';
   g.fillRect(0, 0, W, H);
   for (let k = 0; k < n; k++) {
-    g.fillStyle = `rgba(245,158,11,${ser.sun[a + k] / 250 * 0.35})`;
+    g.fillStyle = `rgba(233,231,225,${ser.sun[a + k] / 250 * 0.35})`;
     g.fillRect(k / n * W, 0, Math.ceil(W / n) + 1, H);
   }
-  g.strokeStyle = dead < 0 ? '#10b981' : '#f43f5e';
+  g.strokeStyle = dead < 0 ? '#E9E7E1' : '#72706B';
   g.lineWidth = 1.5 * dpr;
   g.beginPath();
   for (let k = 0; k <= n; k++) {

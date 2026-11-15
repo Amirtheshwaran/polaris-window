@@ -21,7 +21,7 @@ export function rampTexture(stops) {
   }
   const t = new THREE.DataTexture(d, 256, 1); t.magFilter = t.minFilter = THREE.LinearFilter; t.needsUpdate = true; return t;
 }
-export const RAMP = [[0, 0, 4], [40, 11, 84], [101, 21, 110], [159, 42, 99], [212, 72, 66], [245, 125, 21], [250, 193, 39], [252, 255, 164]];
+export const RAMP = [[16, 17, 19], [42, 44, 49], [76, 79, 87], [116, 119, 128], [156, 158, 165], [191, 192, 196], [218, 217, 213], [233, 231, 225]];
 
 const vs = `attribute vec2 mxy; varying vec2 vM; varying vec3 vN;
 void main(){ vM = mxy; vN = normalize(normal); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
@@ -141,7 +141,7 @@ export function setRays(s, st) {
     const l = new THREE.Line(g, vis ? new THREE.LineBasicMaterial({ color }) : new THREE.LineDashedMaterial({ color, dashSize: 1.2, gapSize: 1.2, transparent: true, opacity: .45 }));
     if (!vis) l.computeLineDistances(); rays.add(l);
   };
-  mk(U.sunDir.value, 0xfbbf24, st.sun > .5); mk(earthSpr.position.clone().normalize(), 0x60a5fa, !!st.earth);
+  mk(U.sunDir.value, 0xE9E7E1, st.sun > .5); mk(earthSpr.position.clone().normalize(), 0x9AA7BC, !!st.earth);
 }
 export function setHeat(name, vals, vmax) {
   const t = name === 'core' ? U.heatC.value : U.heatR.value, d = t.image.data;
@@ -161,7 +161,7 @@ function drawRegions() {
       for (let k = 0; k < n; k++) { const x = x0 + (x1 - x0) * k / n, y = y0 + (y1 - y0) * k / n; pts.push(new THREE.Vector3(x / 1000, sceneY(x, y, heightAt(x, y)) + 0.25, -y / 1000)); }
     }
     const on = s.id === regionSel;
-    regionGrp.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: on ? 0xfbbf24 : 0x34d399, transparent: true, opacity: on ? 1 : .7 })));
+    regionGrp.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: on ? 0xE9E7E1 : 0x72706B, transparent: true, opacity: on ? 1 : .6 })));
   }
 }
 
@@ -170,7 +170,7 @@ export function setMarkers(sites, selId, onSel) {
   const box = document.getElementById('labels');
   for (const s of sites) {
     const y = sceneY(s.x, s.y, s.elev), on = s.id === selId;
-    const pin = new THREE.Mesh(new THREE.CylinderGeometry(on ? .35 : .22, .05, 6, 8), new THREE.MeshBasicMaterial({ color: on ? 0xfbbf24 : (s.custom ? 0xa78bfa : 0x60a5fa) }));
+    const pin = new THREE.Mesh(new THREE.CylinderGeometry(on ? .35 : .22, .05, 6, 8), new THREE.MeshBasicMaterial({ color: on ? 0xE9E7E1 : 0x8A8D98 }));
     pin.position.set(s.x / 1000, y + 3, -s.y / 1000); markers.add(pin);
     const l = document.createElement('div'); l.className = 'lbl' + (on ? ' on' : ''); l.textContent = s.name; l.onclick = () => onSel(s.id);
     l._p = new THREE.Vector3(s.x / 1000, y + 6.5, -s.y / 1000); box.appendChild(l); labelEls.push(l);

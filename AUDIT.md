@@ -179,4 +179,35 @@ To eliminate the floating terrain tile/slab effect when zooming out, the 3D scen
    - `zoom_orbital_day.png` & `zoom_orbital_terminator_sweep.png`: Real-time day/night terminator sweeping across the entire lunar globe.
    - `zoom_closeup_site.png`: Smooth return to Shackleton Rim / Connecting Ridge with close-up LOLA relief, sightlines, and metrics intact.
 
+## Solid Lunar Surface Texture & Material Continuity
+
+Following initial integration of the spherical Moon globe, an issue was diagnosed where the South Pole terrain appeared semi-transparent, darkened, or layered over the brighter global Moon. This was resolved through material coordination and continuous terrain integration:
+
+1. **Root Cause Diagnosis**:
+   - **Double-Surface Alpha Bleed**: `meshR` was previously configured with `transparent: true` and an edge alpha dissolve over `meshGlobe`, creating translucent double-surface ghosting, dark haloing, and z-fighting.
+   - **Texture & Albedo Disparity**: `meshGlobe` sampled the authentic photographic NASA LROC WAC texture (`moon_globe.jpg`), whereas `meshR` and `meshC` were not sampling LROC imagery at all (using synthetic slope-only albedo), resulting in a visibly darker polar patch.
+   - **Topographic Occlusion Mismatch**: Deep crater floors (e.g. Shackleton Crater, $-3.8\text{ km}$ depth) collided with the un-indented smooth spherical geometry of `meshGlobe`.
+   - **Scale Mismatch between Local Horizon Occlusion and Planetary Shading**: Grazing $1.5^\circ$ solar illumination at the South Pole cast realistic LOLA terrain shadows (`illumR`) on `meshR`, while `meshGlobe` rendered as an unshadowed smooth sphere.
+
+2. **Unified Geographic LROC Texture Mapping**:
+   - Mapped polar stereographic $(x, y)$ coordinates directly to selenographic colatitude $\theta$ and longitude $\phi$ in the regional fragment shader:
+     $\theta = 2 \arctan(\rho / (2R))$, $\phi = \text{atan2}(x, y)$.
+     $u = \text{fract}(\phi / (2\pi) + 0.5)$, $v = \theta / \pi$.
+   - Evaluated identical NASA LROC surface reflectance $L_{\text{lroc}}$ on `meshR` and `meshC`, multiplied by high-resolution LOLA slope/crest mass-wasting micro-contrast.
+
+3. **100% Solid Opaque Terrain (Zero Semi-Transparency)**:
+   - Configured `meshR` and `meshC` with `transparent: false`, `depthWrite: true`, and `polygonOffset: true` (`factor: -1.0, units: -1.0`), eliminating all transparency and alpha-blending artifacts.
+   - In `applyHeights`, tapered elevation $h$ smoothly to $0.0$ between $140\text{ km}$ and $185\text{ km}$, bringing the perimeter vertices exactly onto the spherical lunar datum $y = -R + \sqrt{R^2 - \rho^2}$.
+
+4. **Multi-Scale Distance-Based LOD Transition**:
+   - Implemented a unified transition factor `blendT = max(distLod, radBlend)` in the terrain shader:
+     - At close range ($<140\text{ km}$ distance), authentic LOLA 3D topography, Sobel normals, and deep crater shadows are 100% active.
+     - In `fsGlobe`, discarded the polar cap ($\cos\theta > 0.9955$) at close/medium distances ($<480\text{ km}$), preventing the smooth sphere from clipping into deep crater floors.
+     - At orbital distances ($>500\text{ km}$), both `meshR` and `meshC` smoothly hand over to `meshGlobe`, which renders as an unbroken, complete, solid lunar sphere with zero visible polar boundaries, zero dark circular overlays, and zero square patches.
+
+5. **Verification**:
+   - Verified across orbital ($>2000\text{ km}$), regional ($200-400\text{ km}$), and close-up ($<50\text{ km}$) views using live browser automated testing.
+   - Zero console errors, zero WebGL shader compilation warnings.
+
+
 

@@ -74,3 +74,16 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 | 0:26 | Share link, then the 3D fly-over | "From mission planners to classrooms: pick your window to the Moon." |
 
 **Easiest way to record:** open https://amirtheshwaran.github.io/polaris-window/#demo=1 in Chrome, press F11 (fullscreen), start a screen recorder (Windows: Win+Alt+R with Xbox Game Bar; Mac: Cmd+Shift+5), then reload the page. A 30-second choreographed sequence plays with English captions built in. Trim to 30 s or less, add the voiceover (optional, since the captions already tell the story), and upload to YouTube as Public or Unlisted. Test the link in a private window.
+
+---
+
+# Pre-submit checklist (do this before clicking "Submit for Judging")
+
+- [ ] All checkpoint patches are pushed, and the GitHub Actions run "Deploy to GitHub Pages" is green. The site updates within about 10 minutes, because Pages caches files for 600 s.
+- [ ] Open https://amirtheshwaran.github.io/polaris-window/ in a **private window** on a laptop: the welcome screen appears, the guided tour runs, and the NASA check tab shows both validation figures.
+- [ ] Open it on a **phone**: the page scrolls, and the 3D view and panorama show.
+- [ ] Demo video is **30 seconds or less**, uploaded as Public or Unlisted, with English captions (demo mode has them built in). The link opens in a private window without logging in.
+- [ ] Project page: every required field is filled in, in English; "Link to Final Project" = the site URL; "Link to Project Demo" = the video; NASA Data and References sections are pasted from this file; the SI section is completed.
+- [ ] Images uploaded to the project page are JPG, PNG or GIF under 10 MB (the `media/` screenshots qualify), with no NASA logos and no people under 18.
+- [ ] Optional but recommended: request a FortiGuard web filter classification for the site URL (category: Education).
+- [ ] Click **Submit for Judging** before Sun Nov 15, 11:59 pm local time. You can edit and resubmit until the deadline, and the last saved submission is judged.

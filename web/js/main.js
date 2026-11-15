@@ -99,6 +99,13 @@ function runWindows() {
   });
   const go = (sid, t) => { ST.t = t; ST.mission = { site: sid, t, days: c.days }; switchTab('site'); selectSite(sid); };
   $$('#wOut tr.click').forEach(tr => tr.onclick = () => go(tr.dataset.site, +tr.dataset.t));
+  $('wOut').insertAdjacentHTML('beforeend', '<button id="wCsv" class="planner-only">⬇ Export ranked windows (CSV)</button>');
+  $('wCsv').onclick = () => {
+    const rows = ['site,lat,lon_e,landing_utc,mission_days,sun_pct,earth_pct,max_dark_h,max_blackout_h,margin_deg,score'];
+    for (const { s, r } of res) for (const w of r.picked) rows.push([`"${s.name}"`, s.lat, s.lon, tDate(w.a).toISOString().slice(0, 16) + 'Z', c.days, (w.sun * 100).toFixed(1), (w.earth * 100).toFixed(1), w.maxDark, w.maxBlk, w.margin.toFixed(2), w.score.toFixed(1)].join(','));
+    const url = URL.createObjectURL(new Blob(['# Polaris Window landing windows. Constraints: ' + JSON.stringify({ minSun: c.minSun, minEarth: c.minEarth, maxDark: c.maxDark, maxBlack: c.maxBlack }) + '\n' + rows.join('\n')], { type: 'text/csv' }));
+    const A = document.createElement('a'); A.href = url; A.download = `polaris-window_windows_${c.days}d.csv`; A.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+  };
   if (best) $('goBest').onclick = e => { e.preventDefault(); go(best.s.id, best.r.picked[0].a); };
 }
 
@@ -202,7 +209,8 @@ function renderValid() {
   ${hz ? `<h3>Ephemeris vs JPL Horizons (${hz.site})</h3><table><tr><th>Body</th><th>UTC</th><th>Horizons</th><th>Ours</th><th>Δ</th></tr>${hz.rows.map(r => `<tr><td>${r.body}</td><td>${r.utc}</td><td>${r.horizons.toFixed(4)}°</td><td>${r.ours.toFixed(4)}°</td><td>${r.diff.toFixed(4)}°</td></tr>`).join('')}</table>` : ''}`;
 }
 function renderAbout() {
-  $('aboutOut').innerHTML = `<p>Polaris Window answers the mission planner's real question: <b>when and where should we land?</b> It combines real NASA terrain and ephemeris into four tools: a live 3D south pole, a stand-at-site horizon panorama, an automatic landing-window finder, and side-by-side site comparison with heatmaps.</p>
+  const flow = ['🛰️ NASA LOLA terrain<br><small>80 m laser map</small>', '⛰️ Horizons<br><small>131k points, 220 km rays</small>', '☀️🌍 SPICE Sun and Earth<br><small>hourly 2025–2030</small>', '💻 Your browser<br><small>no server</small>', '✅ Checked vs NASA<br><small>r = 0.99</small>'];
+  $('aboutOut').innerHTML = `<div class="flow">${flow.map(f => `<div>${f}</div>`).join('<span>→</span>')}</div><p>Polaris Window answers the mission planner's real question: <b>when and where should we land?</b> It combines real NASA terrain and ephemeris into four tools: a live 3D south pole, a stand-at-site horizon panorama, an automatic landing-window finder, and side-by-side site comparison with heatmaps.</p>
   <h3>How it works</h3><ol class="meta"><li>LOLA LDEM_80S_80M (80 m/pixel) is ray-marched in 120–720 directions out to 220 km, including lunar curvature, to get each point's terrain horizon.</li>
   <li>NAIF SPICE (DE440 + lunar MOON_ME frame) gives hourly Sun and Earth vectors for 2025–2030.</li>
   <li>The browser compares Sun/Earth elevation with the terrain horizon at their azimuth, for any site and any date, with no server.</li>
@@ -399,6 +407,8 @@ function demo() {
   addEventListener('resize', () => ST.tab === 'site' && renderSiteTab());
   $$('#wPreset button').forEach(b => b.onclick = () => { preset(b.dataset.p); if ($('wOut').innerHTML) runWindows(); });
   if (!hadHash) $('welcome').hidden = false;
+  const hint = () => { try { if (localStorage.getItem('pw_hint')) return; localStorage.setItem('pw_hint', '1'); } catch (e) {} const h = $('tlHint'); h.hidden = false; setTimeout(() => h.hidden = true, 7000); };
+  $$('#welcome button').forEach(b => b.addEventListener('click', () => setTimeout(hint, 1500)));
   if (isDemo) setTimeout(demo, 800);
   $$('#welcome button').forEach(b => b.onclick = () => { $('welcome').hidden = true; const w = b.dataset.w;
     if (w === 'tour') tour(0); else if (w === 'date') { switchTab('windows'); runWindows(); } else { switchTab('site'); selectSite('ridge'); } });

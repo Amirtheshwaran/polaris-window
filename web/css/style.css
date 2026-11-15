@@ -92,3 +92,6 @@ body.planner .stats{grid-template-columns:repeat(3,1fr)}
 @media (max-width:1000px){.hdr-actions .btnlink{font-size:12px;padding:4px 7px}}
 .surv{margin-top:12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:4px 12px 10px}.surv h3{color:var(--sun);text-transform:none;letter-spacing:0;font-size:15px}.surv .row b{font-size:12px;min-width:150px;text-align:right}#svChart{width:100%;border-radius:6px;margin-top:6px}.winner.bad{border-color:var(--bad);background:linear-gradient(90deg,#2a0a0a,#0b1220)}
 #tBack,#tFwd{padding:4px 6px;font-size:12px}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:10px 0;font-size:12px}.flow div{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;text-align:center}.flow small{color:var(--mute)}.flow span{color:var(--sun)}
+#tlHint{position:absolute;bottom:62px;left:50%;transform:translateX(-50%);background:var(--sun);color:#111;font-weight:600;padding:6px 12px;border-radius:8px;z-index:5;animation:bob 1s ease-in-out infinite alternate}@keyframes bob{to{transform:translate(-50%,-5px)}}
+@media (prefers-reduced-motion: reduce){#tlHint{animation:none}}

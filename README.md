@@ -38,18 +38,21 @@ Polaris Window is a browser-based mission planner for the lunar south pole. It u
 
 ## How it works
 
-```
-LOLA LDEM_80S_80M (NASA PDS) ─┐
-                              ├─ pipeline/build.py ── horizon ray-marching (Numba, lunar curvature, 220 km reach)
-NAIF SPICE DE440 + MOON_ME  ──┤                    ── hourly Sun/Earth vectors 2025–2030 in the LOLA frame
-NASA PGDA illumination maps ──┴─ pipeline/validate.py ── pixel-by-pixel validation + JPL Horizons cross-check
-                                        │
-                                        ▼
-                     web/data/*  (static, about 10 MB download)  ──►  Three.js + Chart.js app on GitHub Pages
+```mermaid
+flowchart LR
+  A["NASA LRO LOLA<br/>80 m south-pole terrain"] --> B["Horizon ray-tracing<br/>131,000 points x 120 directions<br/>out to 220 km, with lunar curvature"]
+  C["NASA/JPL NAIF SPICE<br/>DE440 + lunar orientation"] --> D["Hourly Sun and Earth vectors<br/>2025-2030, MOON_ME frame"]
+  E["USGS Artemis III<br/>region footprints"] --> F["Best flat spot<br/>in each region"]
+  B --> G[("Static data<br/>about 10 MB")]
+  D --> G
+  F --> G
+  G --> H["Browser app, no server<br/>Three.js + Chart.js"]
+  H --> I["3D sunlight · panorama · best dates<br/>compare · heatmaps · survival · mission brief"]
+  J["NASA PGDA sunlight and Earth maps<br/>JPL Horizons"] -. "validation, r = 0.99" .-> H
 ```
 
 * **Horizons:** for each grid point (two 256 × 256 grids: 1.5 km over ±192 km, 312 m over the central ±40 km), we march rays in 120 directions across the DEM and keep the maximum elevation angle, including lunar curvature (`d²/2R`). Named sites use 720 directions on the full 80 m DEM.
-* **Ephemeris:** SPICE `spkpos` gives Sun and Earth in `MOON_ME`, the same body-fixed frame as LOLA, hourly from 2025 to 2030 (43,824 steps).
+* **Ephemeris:** SPICE `spkpos` gives Sun and Earth in `MOON_ME`, the same body-fixed frame as LOLA, hourly from 2025 to 2030 (52,584 steps).
 * **In the browser:** for any site and time, convert the Sun and Earth vectors to local azimuth and elevation, then compare them with the terrain horizon at that azimuth. Sunlight uses the solar disc fraction. Earth visibility uses a line of sight to Earth's center, with topocentric parallax.
 * There's no backend, so nothing can crash during judging.
 
@@ -58,6 +61,8 @@ NASA PGDA illumination maps ──┴─ pipeline/validate.py ── pixel-by-pi
 ```bash
 cd web && python3 -m http.server 8000   # open http://localhost:8000
 ```
+
+Run the tests: `python -m pytest tests -q`
 
 Rebuild data (about 3 minutes on 4 cores):
 

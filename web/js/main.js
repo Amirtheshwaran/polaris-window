@@ -1,4 +1,4 @@
-import { LOAD, SAFE_SLOPE, D, loadAll, allSites, addCustom, removeCustom, siteState, stats, findWindows, gridAverage, tIndex, tDate, fmtDate, fmtDay, pct, hrs, HOUR } from './data.js';
+import { series, rankWin, LOAD, SAFE_SLOPE, D, loadAll, allSites, addCustom, removeCustom, siteState, stats, findWindows, gridAverage, tIndex, tDate, fmtDate, fmtDay, pct, hrs, HOUR } from './data.js';
 import * as SC from './scene.js';
 import { drawPano, drawStrip } from './pano.js';
 
@@ -78,18 +78,18 @@ function renderSiteTab() {
 function runWindows() {
   const c = { days: +$('wLen').value, minSun: +$('wSun').value, minEarth: +$('wEarth').value, maxDark: +$('wDark').value, maxBlack: +$('wBlack').value, from: Date.parse($('wFrom').value), to: Date.parse($('wTo').value) };
   const list = $('wSites').value === 'all' ? allSites() : [site()];
-  const res = list.map(s => ({ s, r: findWindows(s, c) })).sort((a, b) => (b.r.picked[0]?.score || 0) - (a.r.picked[0]?.score || 0));
+  const res = list.map(s => ({ s, r: findWindows(s, c) })).sort((a, b) => !a.r.picked[0] ? 1 : !b.r.picked[0] ? -1 : rankWin(a.r.picked[0], b.r.picked[0]));
   const best = res.find(x => x.r.picked.length);
   let h = best ? (() => { const w = best.r.picked[0], d = tDate(w.a);
     return `<div class="winner">🏆 Best choice<big>${best.s.name}, land on ${d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}</big>
-    During the ${c.days}-day mission the Sun shines ${pct(w.sun)} of the time and Earth is in view ${pct(w.earth)} of the time. The longest night is only ${hrs(w.maxDark)}.
+    During the ${c.days}-day mission the Sun shines ${pct(w.sun)} of the time and Earth is in view ${pct(w.earth)} of the time. The longest night is only ${hrs(w.maxDark)}.${w.margin > 0 ? ` The Sun and Earth always stay at least ${w.margin.toFixed(1)}° above the hills, a good safety margin.` : ''}
     <br><a href="#" id="goBest">🧍 Stand there on that date →</a></div><p class="hint">Click any row below to jump to that date.</p>`; })() : '<p class="bad">No landing time meets every rule. Try a shorter mission or a different preset.</p>';
   res.forEach(({ s, r }, i) => {
     h += `<div class="winSite"><span>${i + 1}. ${s.name}</span><span class="badge">${r.feasible} of ${r.total} start times feasible</span></div><canvas class="calStrip" data-i="${i}"></canvas>`;
-    if (r.picked.length) h += `<table><tr><th>Landing (UTC)</th><th>Sun</th><th>Earth</th><th>Max dark</th><th>Max blackout</th><th>Score</th></tr>` +
-      r.picked.map(w => `<tr class="click" data-site="${s.id}" data-t="${w.a}"><td>${fmtDate(tDate(w.a)).slice(0, 16)}</td><td>${pct(w.sun)}</td><td>${pct(w.earth)}</td><td>${hrs(w.maxDark)}</td><td>${hrs(w.maxBlk)}</td><td><b>${w.score.toFixed(0)}</b></td></tr>`).join('') + '</table>';
+    if (r.picked.length) h += `<table><tr><th>Landing (UTC)</th><th>Sun</th><th>Earth</th><th>Max dark</th><th>Max blackout</th><th title="Lowest the Sun or Earth gets above the terrain during the mission. Bigger is safer.">Margin</th><th>Score</th></tr>` +
+      r.picked.map(w => `<tr class="click" data-site="${s.id}" data-t="${w.a}"><td>${fmtDate(tDate(w.a)).slice(0, 16)}</td><td>${pct(w.sun)}</td><td>${pct(w.earth)}</td><td>${hrs(w.maxDark)}</td><td>${hrs(w.maxBlk)}</td><td>${w.margin > 0 ? w.margin.toFixed(1) + '°' : '–'}</td><td><b>${w.score.toFixed(0)}</b></td></tr>`).join('') + '</table>';
   });
-  h += `<p class="hint">Score = 55% sunlight + 30% Earth visibility + 15% (1 − longest darkness / mission). Start times evaluated every 6 h. Strip: feasibility over the search range (brighter = better).</p>`;
+  h += `<p class="hint">Score = 55% sunlight + 30% Earth visibility + 15% (1 − longest darkness / mission). Ties are broken by the safety margin: the lowest the Sun or Earth gets above the terrain. Start times evaluated every 6 h. Strip: feasibility over the search range (brighter = better).</p>`;
   $('wOut').innerHTML = h;
   $$('#wOut canvas').forEach(cv => {
     const r = res[+cv.dataset.i].r, dpr = devicePixelRatio, W = cv.width = cv.clientWidth * dpr, H = cv.height = 22 * dpr, g = cv.getContext('2d');
@@ -103,7 +103,29 @@ function runWindows() {
 }
 
 // ------------------------------------------------------------- compare
+let dChart;
+function renderDates() {
+  $('dSite').innerHTML = allSites().map(s => `<option value="${s.id}" ${s.id === ST.site ? 'selected' : ''}>${s.name}</option>`).join('');
+  const s = allSites().find(x => x.id === $('dSite').value) || site(), L = Math.max(1, +$('dLen').value) * 24;
+  const D8 = $$('#dDates input').map(i => i.value).filter(Boolean).map(v => tIndex(Date.parse(v)));
+  const ser = series(s);
+  const M = D8.map(a => { const b = Math.min(D.T, a + L), m = stats(s, a, b); let mg = 99; for (let t = a; t < b; t++) mg = Math.min(mg, ser.smar[t], ser.emar[t]); return { ...m, margin: mg, a }; });
+  const best = (k, hi = true) => { const v = M.map(m => m[k]); return hi ? Math.max(...v) : Math.min(...v); };
+  const row = (lbl, k, f, hi = true) => `<tr><td>${lbl}</td>${M.map(m => `<td class="${m[k] === best(k, hi) && M.length > 1 ? 'good' : ''}">${f(m[k])}</td>`).join('')}</tr>`;
+  $('dTable').innerHTML = `<table><tr><th></th>${M.map((m, i) => `<th style="color:${COLORS[i]}"><a href="#" data-t="${m.a}" class="dgo">${fmtDay(tDate(m.a))}</a></th>`).join('')}</tr>` +
+    row('☀️ Sunlight', 'sun', pct) + row('🌍 Earth visible', 'earth', pct) + row('Sun + Earth', 'both', pct) + row('🌑 Longest night', 'maxDark', hrs, false) +
+    row('📵 Longest blackout', 'maxBlk', hrs, false) + row('Safety margin', 'margin', v => v > 0 ? v.toFixed(1) + '°' : '–') + row('⚡ Energy', 'energyKWh', v => Math.round(v) + ' kWh') + '</table><p class="hint">Click a date to go there.</p>';
+  $$('#dTable a.dgo').forEach(a => a.onclick = e => { e.preventDefault(); ST.t = +a.dataset.t; ST.mission = { site: s.id, t: ST.t, days: L / 24 }; switchTab('site'); selectSite(s.id); });
+  if (!window.Chart) return;
+  dChart?.destroy();
+  const labels = Array.from({ length: L / 24 }, (_, d) => 'Day ' + (d + 1));
+  dChart = new Chart($('dChart'), { type: 'line', data: { labels, datasets: M.map((m, i) => ({ label: fmtDay(tDate(m.a)), borderColor: COLORS[i], backgroundColor: COLORS[i] + '55', tension: .25, pointRadius: 1,
+    data: labels.map((_, d) => { let h = 0; for (let t = m.a + d * 24; t < Math.min(D.T, m.a + d * 24 + 24); t++) h += ser.sun[t] >= 125; return h; }) })) },
+    options: { responsive: true, animation: false, plugins: { title: { display: true, text: 'Sunlit hours per day of the mission', color: '#e5e7eb' }, legend: { labels: { color: '#cbd5e1', boxWidth: 10 } } },
+      scales: { x: { ticks: { color: '#94a3b8', maxTicksLimit: 8 }, grid: { color: '#1e293b' } }, y: { min: 0, max: 24, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } } } } });
+}
 function renderCompare() {
+  if (ST.cmpMode === 'dates') return renderDates();
   $('cmpPick').innerHTML = allSites().map(s => `<label><input type="checkbox" value="${s.id}" ${ST.cmp.includes(s.id) ? 'checked' : ''}>${s.name}</label>`).join('');
   $$('#cmpPick input').forEach(i => i.onchange = () => {
     const v = $$('#cmpPick input:checked').map(x => x.value);
@@ -170,6 +192,10 @@ function renderValid() {
   <div class="stats">${stat(c.r.toFixed(3), 'correlation with NASA map (central 80 km, 312 m cells)')}${stat((c.mae * 100).toFixed(1) + ' pts', 'mean absolute error')}${stat((c.within10 * 100).toFixed(1) + '%', 'cells within 10 pts of NASA')}
   ${stat(r.r.toFixed(3), 'correlation, full 384 km region')}${stat((r.mae * 100).toFixed(1) + ' pts', 'mean abs. error, full region')}${hz ? stat(hz.max_abs_diff_deg.toFixed(4) + '°', 'max Sun/Earth elevation diff vs JPL Horizons') : ''}</div>
   <img class="valimg" src="data/validation_core.png" alt="Side by side: NASA illumination map and Polaris Window model, plus scatter plot">
+  ${v.earth ? `<h3>📡 Earth visibility (direct-to-Earth comms) vs NASA</h3>
+  <p class="meta">The same test for the comms half of the problem: NASA's published Earth-visibility map (${v.earth.source}), computed from the exact terrain-horizon files this website uses.</p>
+  <div class="stats">${stat(v.earth.grids.core.r.toFixed(3), 'correlation with NASA Earth map (central 80 km)')}${stat((v.earth.grids.core.mae * 100).toFixed(1) + ' pts', 'mean absolute error')}${stat(v.earth.grids.regional.r.toFixed(3), 'correlation, full 384 km region')}</div>
+  <img class="valimg" src="data/validation_earth.png" alt="Side by side: NASA Earth visibility map and Polaris Window model, plus scatter plot">` : ''}
   <h3>Sites vs NASA map (nearest 120 m pixel)</h3>
   <table><tr><th>Site</th><th>Ours</th><th>NASA</th><th>NASA best ≤120 m</th></tr>${D.sites.map(s => `<tr><td>${s.name}</td><td>${pct(s.validation.ours)}</td><td>${pct(s.validation.nasa)}</td><td>${pct(s.validation.nasa_best120m)}</td></tr>`).join('')}</table>
   <p class="hint">Our sites sit on hand-picked 80 m peak pixels at a 2 m mast height; NASA's map is 120 m at ground level, which explains the small positive bias on ridge tops.</p>
@@ -187,6 +213,47 @@ function renderAbout() {
   <h3>Data</h3><p class="meta">NASA LRO LOLA (PDS Geosciences Node) · NASA/JPL NAIF SPICE · NASA PGDA Lunar Polar Illumination (Mazarico et al. 2011) · JPL Horizons. Built with Three.js, Chart.js, Python, NumPy, Numba, SpiceyPy.</p>`;
 }
 
+// hours until the Sun (or Earth) next changes between visible / hidden, scanning the hourly series
+function nextChange(arr, t, vis) { const now = vis(arr[t]); for (let k = t + 1; k < Math.min(D.T, t + 24 * 400); k++) if (vis(arr[k]) !== now) return k - t; return -1; }
+const dur = h => h < 24 ? `${h} hour${h === 1 ? '' : 's'}` : `${Math.floor(h / 24)} day${h >= 48 ? 's' : ''}${h % 24 ? ' ' + (h % 24) + ' h' : ''}`;
+function countdown(s) {
+  const { sun, earth } = series(s), t = ST.t, ns = nextChange(sun, t, v => v >= 125), ne = nextChange(earth, t, v => v === 1);
+  const sunUp = sun[t] >= 125, earthUp = earth[t] === 1;
+  const a = ns < 0 ? (sunUp ? '☀️ The Sun will not set here for over a year.' : '🌑 The Sun will not rise here for over a year.') : sunUp ? `☀️ The Sun sets here in <b>${dur(ns)}</b>.` : `🌅 The Sun rises here in <b>${dur(ns)}</b>.`;
+  const b = ne < 0 ? (earthUp ? '🌍 Earth stays in view for over a year.' : '🌍 Earth stays hidden for over a year.') : earthUp ? `🌍 Earth sets behind the hills in <b>${dur(ne)}</b>.` : `🌍 Earth rises in <b>${dur(ne)}</b>.`;
+  return `<div class="meta" style="margin:6px 0 0">${a} ${b}</div>`;
+}
+// Printable mission brief: site, landing date, mission statistics, panorama, day-by-day table
+function missionBrief() {
+  const s = site(), days = ST.mission && ST.mission.site === s.id && ST.mission.t === ST.t ? ST.mission.days : 14, a = ST.t, b = Math.min(D.T, a + days * 24);
+  const m = stats(s, a, b), ser = series(s), d0 = tDate(a);
+  let margin = 99; for (let t = a; t < b; t++) margin = Math.min(margin, ser.smar[t], ser.emar[t]);
+  let rows = '';
+  for (let k = 0; k < days && a + k * 24 < D.T; k++) {
+    let sh = 0, eh = 0, mn = 99, mx = -99;
+    for (let t = a + k * 24; t < Math.min(D.T, a + (k + 1) * 24); t++) { sh += ser.sun[t] >= 125; eh += ser.earth[t]; mn = Math.min(mn, ser.sel[t]); mx = Math.max(mx, ser.sel[t]); }
+    rows += `<tr><td>Day ${k + 1}</td><td>${fmtDay(tDate(a + k * 24))}</td><td>${sh} h</td><td>${eh} h</td><td>${mn.toFixed(2)}° to ${mx.toFixed(2)}°</td><td>${sh === 24 && eh === 24 ? '✅' : sh === 0 ? '🌑 night' : eh === 0 ? '📵 no comms' : '⚠️ partial'}</td></tr>`;
+  }
+  const pano = $('pano').toDataURL('image/png'), strip = $('siteStrip').toDataURL('image/png'), v = D.meta.validation;
+  const w = window.open('', '_blank'); if (!w) return toast('Allow pop-ups to open the mission brief');
+  w.document.write(`<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Mission brief: ${s.name}, ${fmtDay(d0)}</title><style>
+  body{font:14px/1.45 system-ui,sans-serif;color:#111;max-width:900px;margin:24px auto;padding:0 16px}h1{margin:0;font-size:24px}h2{font-size:16px;margin:18px 0 6px;border-bottom:1px solid #ccc}
+  .g{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.g div{border:1px solid #ddd;border-radius:8px;padding:6px 8px}.g b{display:block;font-size:18px}
+  table{border-collapse:collapse;width:100%;font-size:12px}td,th{border-bottom:1px solid #ddd;padding:3px 6px;text-align:left}img{width:100%;border-radius:6px}.m{color:#555;font-size:12px}
+  @media print{button{display:none}}</style></head><body>
+  <button onclick="print()" style="float:right;padding:6px 12px">🖨 Print / save PDF</button>
+  <h1>🌙 Mission brief: ${s.name}</h1><div class="m">Polaris Window · generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC · <a href="${location.href}">open this view</a></div>
+  <h2>Landing</h2><p><b>${fmtDate(d0)}</b>, ${days}-day mission · lat ${s.lat.toFixed(4)}°, lon ${s.lon.toFixed(4)}°E · elevation ${(s.elev / 1000).toFixed(2)} km${s.slope != null ? ` · slope ${s.slope}°` : ''}<br><span class="m">${s.note}</span></p>
+  <div class="g"><div><b>${pct(m.sun)}</b>sunlight</div><div><b>${pct(m.earth)}</b>Earth in view (DTE comms)</div><div><b>${hrs(m.maxDark)}</b>longest darkness</div><div><b>${hrs(m.maxBlk)}</b>longest comms blackout</div>
+  <div><b>${pct(m.both)}</b>sun AND Earth</div><div><b>${margin > 0 ? margin.toFixed(1) + '°' : 'none'}</b>safety margin (lowest Sun/Earth clearance)</div><div><b>${(m.energyKWh).toFixed(0)} kWh</b>energy, 10 m² array at 30%</div><div><b>${Math.round(m.powerW)} W</b>average power</div></div>
+  <h2>Horizon panorama (Sun path gold, Earth path blue, next 29.5 days)</h2><img src="${pano}" alt="Horizon panorama">
+  <h2>Next 60 days (gold = sunlit, blue = Earth in view)</h2><img src="${strip}" alt="60-day strip">
+  <h2>Day by day</h2><table><tr><th></th><th>Date (UTC)</th><th>Sun visible</th><th>Earth visible</th><th>Sun elevation range</th><th>Status</th></tr>${rows}</table>
+  <h2>Method and trust</h2><p class="m">Terrain: NASA LRO LOLA LDEM_80S_80M; horizons ray-traced out to 220 km with lunar curvature; observer 2 m above ground. Ephemeris: NASA/JPL NAIF SPICE DE440, MOON_ME frame.
+  Validation: sunlight map vs NASA PGDA r = ${v.grids.core.r.toFixed(3)}${v.earth ? `; Earth-visibility map vs NASA r = ${v.earth.grids.core.r.toFixed(3)}` : ''}; Sun/Earth elevation vs JPL Horizons within ${v.horizons ? v.horizons.max_abs_diff_deg.toFixed(4) : '0.001'}°.
+  Hazards smaller than 80 m (rocks, small craters) are not resolved.</p></body></html>`);
+  w.document.close();
+}
 const HEATL = { sun: 'Sunlight', earth: 'Earth visibility', both: 'Sun AND Earth', slope: 'Flat ground', land: 'Best landing spots' };
 const stars = (v, icon) => icon.repeat(Math.round(v * 5)) + '<span style="opacity:.25">' + icon.repeat(5 - Math.round(v * 5)) + '</span>';
 function verdict(s, m, st) {
@@ -197,7 +264,7 @@ function verdict(s, m, st) {
   const bat = m.maxDark > 0 && m.sun > .05 ? ` To keep a 1 kW base running through the longest night (${hrs(m.maxDark)}) you need about ${kwh.toLocaleString()} kWh of batteries, roughly ${cars} electric-car batter${cars === 1 ? 'y' : 'ies'}.` : '';
   const story = s.story ? `<div class="story">📖 <b>True story:</b> ${s.story} <a href="#" onclick="PW.goLanding('${s.id}');return false">⏱ Go to the landing moment</a></div>` : '';
   return `${story}<b>${s.name}</b> is ${pw}, and ${cm}.${sl}${bat}<div class="rate"><span title="Sunlight">☀️ Power ${stars(m.sun, '★')}</span><span title="Earth visibility">📡 Talk to Earth ${stars(m.earth, '★')}</span></div>
-  <div class="meta" style="margin:6px 0 0">Right now: the Sun is ${st.sun > .5 ? '<b style="color:#fbbf24">shining here</b>' : 'hidden'} and Earth is ${st.earth ? '<b style="color:#60a5fa">in view</b>' : 'hidden'}.</div>`;
+  ${countdown(s)}<div class="meta" style="margin:6px 0 0">Right now: the Sun is ${st.sun > .5 ? '<b style="color:#fbbf24">shining here</b>' : 'hidden'} and Earth is ${st.earth ? '<b style="color:#60a5fa">in view</b>' : 'hidden'}.</div>`;
 }
 function horizonsURL(s) {
   const d = tDate(ST.t).toISOString().slice(0, 16).replace('T', ' '), e = tDate(ST.t + 1).toISOString().slice(0, 16).replace('T', ' ');
@@ -223,7 +290,7 @@ const TOUR = [
   ['Compare sites side by side: sunlight, Earth visibility and the longest blackout, month by month.', () => switchTab('compare')],
   ['Planner mode: give it a mission length and power/comms limits, and the window finder ranks every possible landing date.', () => { setMode('planner'); switchTab('windows'); runWindows(); }],
   ['A true story: in March 2025 the CLPS lander Athena picked a great spot here, with 100% sun and Earth for 10 days. But it landed in a small crater, tipped over and ran out of power. Picking the place and date is step one, and the next step is mapping small hazards.', () => { setMode('explore'); switchTab('site'); PW.goLanding('clps_im2'); }],
-  ['Every number is checked against NASA: our illumination model matches NASA\'s published map with r ≈ 0.99, and our ephemeris matches JPL Horizons to 0.001°.', () => switchTab('valid')],
+  ['Every number is checked against NASA: our sunlight and Earth-visibility maps match NASA\'s published maps with r ≈ 0.99, and our Sun and Earth positions match JPL Horizons to 0.001°.', () => switchTab('valid')],
 ];
 let tourI = 0;
 function tour(i) { tourI = Math.max(0, Math.min(TOUR.length - 1, i)); $('tourBox').hidden = false; $('tourText').textContent = TOUR[tourI][0]; $('tourStep').textContent = `${tourI + 1} / ${TOUR.length}`; $('tourNext').textContent = tourI === TOUR.length - 1 ? 'Done' : 'Next ›'; TOUR[tourI][1](); }
@@ -278,6 +345,7 @@ function demo() {
   $('timeInput').onchange = e => { ST.t = tIndex(Date.parse(e.target.value + 'Z')); update(); };
   $('play').onclick = () => play();
   $('trust').onclick = e => { e.preventDefault(); switchTab('valid'); };
+  $('briefBtn').onclick = missionBrief;
   $('csvBtn').onclick = () => {
     const s = site(), a = ST.t, b = Math.min(D.T, a + 24 * 365), rows = ['utc,sun_az_deg,sun_el_deg,sun_horizon_deg,sun_disc_visible_frac,earth_az_deg,earth_el_deg,earth_horizon_deg,earth_visible'];
     for (let t = a; t < b; t++) { const q = siteState(s, t); rows.push([tDate(t).toISOString().slice(0, 16) + 'Z', q.saz.toFixed(3), q.sel.toFixed(4), q.shz.toFixed(3), q.sun.toFixed(3), q.eaz.toFixed(3), q.eel.toFixed(4), q.ehz.toFixed(3), q.earth].join(',')); }
@@ -293,6 +361,8 @@ function demo() {
   $$('#layerSeg button').forEach(b => b.onclick = () => b.dataset.layer === 'heat' && !ST.heat ? (switchTab('heat'), runHeat()) : setLayer(b.dataset.layer));
   $('wRun').onclick = runWindows; $('hRun').onclick = () => runHeat();
   ['cFrom', 'cTo'].forEach(id => $(id).onchange = renderCompare);
+  $$('#cmpMode button').forEach(b => b.onclick = () => { ST.cmpMode = b.dataset.c; $$('#cmpMode button').forEach(x => x.classList.toggle('on', x === b)); $('cmpSites').hidden = ST.cmpMode === 'dates'; $('cmpDates').hidden = ST.cmpMode !== 'dates'; renderCompare(); });
+  ['dSite', 'dLen'].forEach(id => $(id).onchange = renderDates); $$('#dDates input').forEach(i => i.onchange = renderDates);
   $('shareBtn').onclick = () => { writeHash(); navigator.clipboard?.writeText(location.href).then(() => toast('Link copied: anyone opening it sees this exact view'), () => prompt('Copy this link', location.href)); };
   $('tourBtn').onclick = () => tour(0); $('tourNext').onclick = () => tourI === TOUR.length - 1 ? ($('tourBox').hidden = true) : tour(tourI + 1);
   $('tourPrev').onclick = () => tour(tourI - 1); $('tourEnd').onclick = () => { $('tourBox').hidden = true; play(false); };

@@ -91,21 +91,21 @@ export function siteState(s, t) {
 export function series(s) {
   if (s.series) return s.series;
   const T = D.T, E = D.ephem, F = s.F, P = s.pos, prof = s.prof, naz = s.naz, k = naz / 360, R2D = 180 / Math.PI;
-  const sun = new Uint8Array(T), earth = new Uint8Array(T), sel = new Float32Array(T), eel = new Float32Array(T);
+  const sun = new Uint8Array(T), earth = new Uint8Array(T), sel = new Float32Array(T), eel = new Float32Array(T), smar = new Float32Array(T), emar = new Float32Array(T);
   const hz = az => { const f = az * k, i = Math.floor(f), w = f - i, i0 = i % naz; return prof[i0] * (1 - w) + prof[(i0 + 1) % naz] * w; };
   for (let t = 0, o = 0; t < T; t++, o += 6) {
     // Sun (direction)
     let x = E[o], y = E[o + 1], z = E[o + 2];
     let u = x * F[0] + y * F[1] + z * F[2], mx = x * F[3] + y * F[4] + z * F[5], my = x * F[6] + y * F[7] + z * F[8];
     let el = Math.atan2(u, Math.sqrt(mx * mx + my * my)) * R2D, az = Math.atan2(mx, my) * R2D; if (az < 0) az += 360;
-    const sf = (el - hz(az)) / (2 * SUN_R) + .5; sun[t] = sf <= 0 ? 0 : sf >= 1 ? 250 : Math.round(sf * 250); sel[t] = el;
+    const hs = hz(az), sf = (el - hs) / (2 * SUN_R) + .5; sun[t] = sf <= 0 ? 0 : sf >= 1 ? 250 : Math.round(sf * 250); sel[t] = el; smar[t] = el - hs;
     // Earth (position minus site position: topocentric)
     x = E[o + 3] - P[0]; y = E[o + 4] - P[1]; z = E[o + 5] - P[2];
     u = x * F[0] + y * F[1] + z * F[2]; mx = x * F[3] + y * F[4] + z * F[5]; my = x * F[6] + y * F[7] + z * F[8];
     el = Math.atan2(u, Math.sqrt(mx * mx + my * my)) * R2D; az = Math.atan2(mx, my) * R2D; if (az < 0) az += 360;
-    earth[t] = el > hz(az) ? 1 : 0; eel[t] = el;
+    const he = hz(az); earth[t] = el > he ? 1 : 0; eel[t] = el; emar[t] = el - he;
   }
-  return (s.series = { sun, earth, sel, eel });
+  return (s.series = { sun, earth, sel, eel, smar, emar });
 }
 
 // Statistics for a site over [a,b) hour indices
@@ -126,29 +126,30 @@ export function stats(s, a, b) {
 // Auto window finder: rank start dates (6-hour steps) for an N-day mission.
 export function findWindows(s, c) {
   const L = Math.round(c.days * 24), a0 = tIndex(c.from), a1 = Math.min(tIndex(c.to), D.T - L), step = 6;
-  const { sun, earth } = series(s), cand = [];
+  const { sun, earth, smar, emar } = series(s), cand = [];
   // prefix sums for fast means
   const ps = new Float64Array(D.T + 1), pe = new Float64Array(D.T + 1);
   for (let t = 0; t < D.T; t++) { ps[t + 1] = ps[t] + sun[t] / 250; pe[t + 1] = pe[t] + earth[t]; }
   const curve = [];
   for (let a = a0; a <= a1; a += step) {
     const sp = (ps[a + L] - ps[a]) / L, ep = (pe[a + L] - pe[a]) / L;
-    let ok = sp * 100 >= c.minSun && ep * 100 >= c.minEarth, md = 0, mb = 0;
+    let ok = sp * 100 >= c.minSun && ep * 100 >= c.minEarth, md = 0, mb = 0, mg = 99;
     if (ok) { // only evaluate run lengths for feasible windows
       let d = 0, k = 0;
-      for (let t = a; t < a + L; t++) { d = sun[t] < 125 ? d + 1 : 0; if (d > md) md = d; k = earth[t] ? 0 : k + 1; if (k > mb) mb = k; }
+      for (let t = a; t < a + L; t++) { d = sun[t] < 125 ? d + 1 : 0; if (d > md) md = d; k = earth[t] ? 0 : k + 1; if (k > mb) mb = k; const m = smar[t] < emar[t] ? smar[t] : emar[t]; if (m < mg) mg = m; }
       ok = md <= c.maxDark && mb <= c.maxBlack;
     }
     const score = ok ? 100 * (0.55 * sp + 0.3 * ep + 0.15 * (1 - md / L)) : 0;
     curve.push(score);
-    if (ok) cand.push({ a, sun: sp, earth: ep, maxDark: md, maxBlk: mb, score });
+    if (ok) cand.push({ a, sun: sp, earth: ep, maxDark: md, maxBlk: mb, score, margin: mg });
   }
-  cand.sort((x, y) => (y.score - x.score) || (x.a - y.a));
+  cand.sort(rankWin);
   const picked = []; // non-overlapping top windows
   for (const w of cand) { if (picked.every(p => Math.abs(p.a - w.a) >= L)) picked.push(w); if (picked.length >= 5) break; }
   return { picked, curve, a0, step, feasible: cand.length, total: curve.length };
 }
 
+export const rankWin = (x, y) => (Math.round(y.score * 10) - Math.round(x.score * 10)) || (y.margin - x.margin) || (x.a - y.a);
 export function addCustom(x, y, name, persist = true) {
   const [lat, lon] = xy2ll(x, y), g = gridFor(x, y);
   if (!g) return null;

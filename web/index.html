@@ -44,7 +44,7 @@
     <div id="hud">
       <div id="hudSite"></div>
       <div id="hudSun"></div>
-      <a id="trust" href="#" title="See how our results compare with NASA">✅ Matches NASA sunlight maps (r = 0.99)</a>
+      <a id="trust" href="#" title="See how our results compare with NASA">✅ Matches NASA sunlight and Earth maps (r = 0.99)</a>
     </div>
     <div id="tourBox" hidden><p id="tourText"></p><div><button id="tourPrev">‹</button><span id="tourStep"></span><button id="tourNext">Next ›</button><button id="tourEnd">✕</button></div></div>
     <div id="timeline">
@@ -74,6 +74,19 @@
       <div id="siteStats" class="stats"></div>
       <canvas id="siteStrip" height="70"></canvas>
       <p class="hint">Strip: next 60 days. Gold = sunlit, blue = Earth in view, black = blackout.</p>
+      <details class="gloss explore-only"><summary>📚 What do these words mean?</summary>
+        <dl>
+          <dt>Horizon</dt><dd>The line where the ground meets the sky. Here it's bumpy because of mountains and craters.</dd>
+          <dt>Elevation (°)</dt><dd>How high something is above a flat horizon. 0° is level, 90° is straight up. At the south pole the Sun stays within about 1.5° of level.</dd>
+          <dt>Azimuth (°)</dt><dd>Which direction you're looking, all the way around from 0° to 360°. Here 0° points toward the side of the Moon that faces Earth.</dd>
+          <dt>Lunar day</dt><dd>One day-night cycle on the Moon lasts about 29.5 Earth days, so the Sun takes a month to go around the horizon once.</dd>
+          <dt>Permanently shadowed region</dt><dd>A crater floor that sunlight never reaches. It's colder than about −170 °C and can trap water ice.</dd>
+          <dt>Direct-to-Earth (DTE) comms</dt><dd>Talking to Earth by radio in a straight line. If a hill blocks Earth, the radio link is lost.</dd>
+          <dt>Libration</dt><dd>The Moon's slight wobble, which makes Earth bob up and down in the lunar sky over about a month.</dd>
+          <dt>Slope</dt><dd>How tilted the ground is. Landers need gentle ground, usually less than about 8°.</dd>
+        </dl>
+      </details>
+      <button id="briefBtn" class="primary" style="margin-top:10px">📄 Mission brief for this site and date (print / save as PDF)</button>
       <div class="planner-only"><button id="csvBtn">⬇ Download hourly Sun/Earth data for this site (CSV, 12 months)</button></div>
     </div>
 
@@ -99,12 +112,23 @@
 
     <div class="tab" id="tab-compare">
       <h2>Side-by-side compare</h2>
-      <p class="meta">Pick 2–4 sites. Statistics over the chosen period.</p>
-      <div id="cmpPick" class="chips"></div>
-      <label class="row">Period <input type="date" id="cFrom" value="2027-01-01"> to <input type="date" id="cTo" value="2027-12-31"></label>
-      <div id="cmpTable"></div>
-      <canvas id="cmpChart" height="220"></canvas>
-      <canvas id="cmpChart2" height="180"></canvas>
+      <div class="seg" id="cmpMode"><button data-c="sites" class="on">📍 Compare sites</button><button data-c="dates">📅 Compare dates</button></div>
+      <div id="cmpSites">
+        <p class="meta">Pick 2–4 sites. Statistics over the chosen period.</p>
+        <div id="cmpPick" class="chips"></div>
+        <label class="row">Period <input type="date" id="cFrom" value="2027-01-01"> to <input type="date" id="cTo" value="2027-12-31"></label>
+        <div id="cmpTable"></div>
+        <canvas id="cmpChart" height="220"></canvas>
+        <canvas id="cmpChart2" height="180"></canvas>
+      </div>
+      <div id="cmpDates" hidden>
+        <p class="meta">Same site, different landing dates. Which date gives the most power and the best contact with Earth?</p>
+        <label class="row">Site <select id="dSite"></select></label>
+        <label class="row">Mission length <input type="number" id="dLen" value="14" min="1" max="90" style="width:70px"> days</label>
+        <div class="row" id="dDates"><input type="date" value="2027-01-10"><input type="date" value="2027-04-10"><input type="date" value="2027-07-10"><input type="date" value="2027-10-10"></div>
+        <div id="dTable"></div>
+        <canvas id="dChart" height="200"></canvas>
+      </div>
     </div>
 
     <div class="tab" id="tab-heat">

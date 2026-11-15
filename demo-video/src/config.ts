@@ -1,6 +1,6 @@
 // Editable title data. TEAM_MEMBERS: add verified teammate names here (only the repository owner is verified from project files).
 export const TEAM_NAME = 'Team Polaris Window';
-export const TEAM_MEMBERS = ['Amirtheshwaran Navaneethakrishnan'];
+export const TEAM_MEMBERS = ['Amirtheshwaran Navaneethakrishnan', 'Abhishek Mahapatra'];
 export const CHALLENGE = 'NASA Space Apps Challenge 2026 · Lunar Landing Site Navigator';
 export const URL = 'amirtheshwaran.github.io/polaris-window';
 

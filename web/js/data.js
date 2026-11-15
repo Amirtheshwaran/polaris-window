@@ -3,7 +3,19 @@ export const D = { meta: null, sites: [], ephem: null, T: 0, t0: 0, grids: {}, c
 const R = 1737400, DEG = Math.PI / 180, SUN_R = 0.267;
 export const HOUR = 3600e3;
 
-export const LOAD = { got: 0, total: 18.9e6, onprog: null };
+export const LOAD = { got: 0, total: 10.2e6, onprog: null };
+// Horizon grids ship delta-encoded along azimuth and gzipped (~45% smaller); fall back to raw .bin on old browsers
+async function horizonGrid(name, naz) {
+  if ('DecompressionStream' in window) {
+    try {
+      let b = new Uint8Array((await bin(`data/hz_${name}.dgz`, Uint8Array)).buffer);
+      if (b[0] === 0x1f && b[1] === 0x8b) b = new Uint8Array(await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
+      for (let i = 0; i < b.length; i += naz) { let acc = 0; for (let a = 0; a < naz; a++) { acc = (acc + b[i + a]) & 255; b[i + a] = acc; } }
+      return b;
+    } catch (e) { console.warn('packed horizons failed, using raw', e); }
+  }
+  return bin(`data/hz_${name}.bin`, Uint8Array);
+}
 async function bin(url, Type) {
   const r = await fetch(url); if (!r.ok) throw new Error(url + ' ' + r.status);
   const len = +r.headers.get('Content-Length') || 0, rd = r.body && r.body.getReader();
@@ -16,7 +28,7 @@ async function bin(url, Type) {
 export async function loadAll() {
   const [meta, sites, eph, hr, hc, ter, terc, slr, slc] = await Promise.all([
     fetch('data/meta.json').then(r => r.json()), fetch('data/sites.json').then(r => r.json()),
-    bin('data/ephem.bin', Float32Array), bin('data/hz_regional.bin', Uint8Array), bin('data/hz_core.bin', Uint8Array),
+    bin('data/ephem.bin', Float32Array), horizonGrid('regional', 120), horizonGrid('core', 120),
     bin('data/terrain.bin', Int16Array), bin('data/terrain_core.bin', Int16Array), bin('data/slope_regional.bin', Uint8Array), bin('data/slope_core.bin', Uint8Array)]);
   Object.assign(D, { meta, sites, ephem: eph, T: meta.ephem.count, t0: Date.parse(meta.ephem.start), terrain: ter, terrainCore: terc });
   D.grids.core = mkGrid(meta.grids.core, hc, meta);
@@ -198,22 +210,30 @@ export async function gridAverage(g, a, b, metric, onProg) {
   const N = g.n * g.n, F = g.F, hz = g.hz, naz = g.naz, acc = new Float32Array(N);
   if (metric === 'slope') { for (let k = 0; k < N; k++) acc[k] = Math.max(0, 1 - g.slope[k] / 20); return acc; }
   if (metric === 'land') { const v = await gridAverage(g, a, b, 'both', onProg); for (let k = 0; k < N; k++) v[k] *= g.slope[k] <= SAFE_SLOPE ? 1 : 0; return v; }
-  const stride = Math.max(1, Math.ceil((b - a) / 1500)); let cnt = 0;
-  const steps = []; for (let t = a; t < b; t += stride) steps.push(t);
-  for (let si = 0; si < steps.length; si++) {
-    const t = steps[si], s = sunVec(t), e = earthVec(t);
-    for (let k = 0; k < N; k++) {
-      const o = k * 9; let v = 1;
-      if (metric !== 'earth') { const [az, el] = azel(F, o, s); v = sunFrac(el, hzAt(hz, k * naz, naz, az)); }
-      if (metric !== 'sun') { // Earth parallax: subtract site position (approx radius R)
-        const r = R / 1e6, p = [F[o] * r, F[o + 1] * r, F[o + 2] * r];
-        const [az, el] = azel(F, o, [e[0] - p[0], e[1] - p[1], e[2] - p[2]]);
-        v *= el > hzAt(hz, k * naz, naz, az) ? 1 : 0;
+  // Allocation-free inner loop (same math as azel/hzAt/sunFrac), at most 1000 time steps
+  const stride = Math.max(1, Math.ceil((b - a) / 1000)), nSteps = Math.ceil((b - a) / stride); let cnt = 0;
+  const doSun = metric !== 'earth', doEarth = metric !== 'sun', r = R / 1e6, R2D = 180 / Math.PI, k360 = naz / 360, inv = 1 / (2 * SUN_R), E = D.ephem;
+  for (let t = a, si = 0; t < b; t += stride, si++) {
+    const q = t * 6, s0 = E[q], s1 = E[q + 1], s2 = E[q + 2], e0 = E[q + 3], e1 = E[q + 4], e2 = E[q + 5];
+    for (let k = 0, o = 0, h = 0; k < N; k++, o += 9, h += naz) {
+      let v = 1;
+      if (doSun) {
+        const u = s0 * F[o] + s1 * F[o + 1] + s2 * F[o + 2], mx = s0 * F[o + 3] + s1 * F[o + 4] + s2 * F[o + 5], my = s0 * F[o + 6] + s1 * F[o + 7] + s2 * F[o + 8];
+        const el = Math.atan2(u, Math.sqrt(mx * mx + my * my)) * R2D; let az = Math.atan2(mx, my) * R2D; if (az < 0) az += 360;
+        const f = az * k360, i = f | 0, w = f - i, i0 = i % naz, hv = hz[h + i0] * (1 - w) + hz[h + (i0 + 1) % naz] * w;
+        v = (el - hv) * inv + .5; v = v < 0 ? 0 : v > 1 ? 1 : v;
+      }
+      if (doEarth && v > 0) { // Earth: topocentric (subtract site position, radius R)
+        const x = e0 - F[o] * r, y = e1 - F[o + 1] * r, z = e2 - F[o + 2] * r;
+        const u = x * F[o] + y * F[o + 1] + z * F[o + 2], mx = x * F[o + 3] + y * F[o + 4] + z * F[o + 5], my = x * F[o + 6] + y * F[o + 7] + z * F[o + 8];
+        const el = Math.atan2(u, Math.sqrt(mx * mx + my * my)) * R2D; let az = Math.atan2(mx, my) * R2D; if (az < 0) az += 360;
+        const f = az * k360, i = f | 0, w = f - i, i0 = i % naz, hv = hz[h + i0] * (1 - w) + hz[h + (i0 + 1) % naz] * w;
+        if (el <= hv) v = 0;
       }
       acc[k] += v;
     }
     cnt++;
-    if (si % 40 === 39) { onProg && onProg(si / steps.length); await new Promise(r => setTimeout(r)); }
+    if (si % 40 === 39) { onProg && onProg(si / nSteps); await new Promise(r => setTimeout(r)); }
   }
   for (let k = 0; k < N; k++) acc[k] /= cnt;
   return acc;

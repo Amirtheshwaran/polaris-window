@@ -35,7 +35,7 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 3. Everything is precomputed into static binary files (about a 10 MB download, with horizon grids delta-encoded and compressed). The browser does the rest: local azimuth and elevation, horizon comparison, statistics, window search and heatmaps. There's no server, so nothing can go down.
 4. **Validation:** we recomputed NASA PGDA's published average-illumination map (Mazarico et al. 2011) for the same 2009–2013 period. Our sunlight map correlates at r = 0.990 (mean absolute error 1.5 percentage points, 98.9% of cells within 10 points). Our Earth-visibility map, which covers direct-to-Earth comms, correlates with NASA's Earth-visibility map at r = 0.992 (mean error 1.8 points). Our Sun and Earth elevations match JPL Horizons to within 0.001°. Both comparisons are shown in the app.
 
-**Benefits:** it turns hours of work across Horizons, Quickmap and spreadsheets into seconds. A landing-date decision becomes a ranked list. Educators and the public get an intuitive, accurate picture of why the south pole is so hard, and so valuable.
+**Benefits:** it turns hours of work across Horizons, Quickmap and spreadsheets into seconds. Checking whether the Sun or Earth is above the real terrain, which normally means combining ephemeris queries with a terrain horizon you build yourself, becomes one click. Ranking every landing date for a mission, which would normally need thousands of queries, takes about a second. A landing-date decision becomes a ranked list. Educators and the public get an intuitive, accurate picture of why the south pole is so hard, and so valuable.
 
 **Tools:** Python, NumPy, SciPy, Numba, SpiceyPy, Matplotlib, JavaScript, Three.js, Chart.js, GitHub Pages.
 

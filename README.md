@@ -12,12 +12,11 @@ NASA Space Apps Challenge 2026: *Lunar Landing Site Navigator*
 | **3D south pole** from NASA LOLA terrain, with the nine Artemis III candidate regions (official USGS footprints) | **Stand at site:** the real horizon, with the Sun path (gold) and Earth path (blue) |
 | ![Window finder ranking landing dates](media/3-best-landing-date.png) | ![Best landing spots heatmap](media/4-best-landing-spots-heatmap.png) |
 | **Best landing date:** ranks every landing slot from 2025 to 2030 | **Best landing spots:** sun + Earth + flat ground for any date range |
+| ![Will your lander survive? battery simulator](media/7-lander-survival.png) | ![Earth-visibility validation](media/6-earth-validation-vs-nasa.png) |
+| **Will your lander survive?** Battery simulated hour by hour from real sunlight | **Comms check:** our Earth-visibility map vs NASA's (r = 0.992) |
 
 ![Our sunlight map vs NASA's published map](media/5-validation-vs-nasa.png)
 *Validation: our model (center) reproduces NASA's published south-pole illumination map (left) with r = 0.990.*
-
-![Our Earth-visibility map vs NASA's published map](media/6-earth-validation-vs-nasa.png)
-*Comms validation: our Earth-visibility (direct-to-Earth) map reproduces NASA's published map with r = 0.992.*
 
 Polaris Window is a browser-based mission planner for the lunar south pole. It uses real NASA terrain and ephemeris to answer the planner's question directly: *which site, and which landing date, gives us the power and the direct-to-Earth comms we need?*
 
@@ -38,6 +37,19 @@ Polaris Window is a browser-based mission planner for the lunar south pole. It u
 | **Mission brief** | One click produces a printable or PDF report for the chosen site and landing date: key numbers, safety margin, panorama, 60-day outlook and a day-by-day table. |
 | **Shareable links + QR** | Every view (site, date, tab, heatmap, custom site) is encoded in the URL. The share dialog also shows a QR code, so a teacher can put it on a projector and students open the exact moment on their phones. |
 | **Explore / Planner modes + guided tour** | An 8-step narrated tour for classrooms and the public, and full controls for planners. |
+
+## Why this is easier than existing tools
+
+The challenge notes that tools for Sun and Earth positions exist, but their interfaces make quick decisions hard. Here is what changes:
+
+| Planner question | With existing tools | With Polaris Window |
+|---|---|---|
+| Is the Sun up at my site right now? | Query JPL Horizons for Sun azimuth and elevation, then compare against a terrain horizon you build yourself from LOLA data | Pick the site: the panorama shows the Sun against the real horizon |
+| When can we talk to Earth? | Repeat the Horizons query for Earth, hour by hour, and check terrain blocking by hand | The Earth path and a 60-day strip show every blackout |
+| Which landing date is best for a 14-day mission? | Script thousands of ephemeris queries plus horizon checks | Enter the mission rules: every date from 2025 to 2030 is ranked in about a second |
+| Which of the Artemis III regions is best? | Repeat all of the above for each region | Compare up to 4 sites side by side, or ask the window finder for all 9 regions at once |
+| Can my lander survive the night? | Build your own power model | Move three sliders |
+| Can I trust the numbers? | n/a | Checked against NASA's published sunlight and Earth-visibility maps (r = 0.99) and JPL Horizons (0.001°) |
 
 ## How it works
 

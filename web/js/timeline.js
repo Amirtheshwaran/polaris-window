@@ -24,7 +24,9 @@ export function initTimeline(onUpdate) {
   };
 
   $('timeInput').onchange = e => {
-    const ms = Date.parse(e.target.value + ':00:00Z');
+    // datetime-local gives "YYYY-MM-DDTHH:MM" (sometimes with seconds); interpret it as UTC.
+    const v = String(e.target.value || '');
+    const ms = Date.parse(v.length === 13 ? v + ':00Z' : v.length === 16 ? v + ':00Z' : v + 'Z');
     if (!isNaN(ms)) {
       ST.t = tIndex(ms);
       updateCallback?.();

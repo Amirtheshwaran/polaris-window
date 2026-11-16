@@ -34,6 +34,12 @@ export function tourStep(delta = 1) {
   steps[tourIndex][1]();
 }
 
+// Next button: advance, or close the tour from the last step ("Finish").
+export function tourNext() {
+  if (tourIndex >= getTourSteps().length - 1) tourClose();
+  else tourStep(1);
+}
+
 export function startTour() {
   tourIndex = 0;
   tourStep(0);

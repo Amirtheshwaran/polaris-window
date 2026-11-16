@@ -13,7 +13,7 @@
 <meta property="og:url" content="https://amirtheshwaran.github.io/polaris-window/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#101113">
-<link rel="stylesheet" href="css/style.css?v=20261115b">
+<link rel="stylesheet" href="css/style.css?v=20261116a">
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js","three/addons/controls/OrbitControls.js":"./vendor/OrbitControls.js"}}</script>
 <script src="vendor/chart.umd.min.js"></script>
 <script src="vendor/qrcode.js" defer></script>
@@ -35,9 +35,9 @@
 
   <!-- Primary 3 Destinations Navigation -->
   <nav class="primary-nav" aria-label="Main Navigation">
-    <button id="nav-explore" data-dest="explore" class="active" title="Explore the lunar terrain and candidate landing sites">Explore the Pole</button>
-    <button id="nav-plan" data-dest="plan" title="Find and compare optimal landing dates">Find a Landing Date</button>
-    <button id="nav-science" data-dest="science" title="Methodology, calculations, and NASA ground-truth validation">How It Works</button>
+    <button id="nav-explore" data-dest="explore" class="active" title="Explore the lunar terrain and candidate landing sites"><span class="nav-full">Explore the Pole</span><span class="nav-short">Explore</span></button>
+    <button id="nav-plan" data-dest="plan" title="Find and compare optimal landing dates"><span class="nav-full">Find a Landing Date</span><span class="nav-short">Dates</span></button>
+    <button id="nav-science" data-dest="science" title="Methodology, calculations, and NASA ground-truth validation"><span class="nav-full">How It Works</span><span class="nav-short">Science</span></button>
   </nav>
 
   <!-- Header Actions & Secondary Menu -->
@@ -463,11 +463,11 @@
 
       <!-- Heatmap Tab (Contextual Layer Drawer) -->
       <div class="tab" id="tab-heat">
-        <h2>Regional Heatmap Synthesis</h2>
+        <h2>Map the Whole Region</h2>
         <p class="meta">Computed directly in your browser from 131,000 terrain horizon profiles across the south pole.</p>
         <div class="chips" id="hPresets">
           <button data-p="sun27">Sunlight in 2027</button>
-          <button data-p="ice">Cold Traps / Water Ice</button>
+          <button data-p="ice" title="Places that got no sunlight from 2025 to 2030 (candidate cold traps)">Cold Traps (No Sunlight)</button>
           <button data-p="comms">Direct Earth View</button>
           <button data-p="land">Best Landing Spots</button>
         </div>
@@ -492,6 +492,7 @@
           <button class="primary-action" id="hRun">Compute Heatmap</button>
         </div>
         <div id="hOut" class="meta" style="margin-top:10px;"></div>
+        <div id="legend" style="margin-top:12px;" aria-label="Heatmap scale"></div>
       </div>
 
     </div>
@@ -515,10 +516,10 @@
       </div>
 
       <div class="timeline-speed-wrapper">
-        <select id="speed" class="speed-select" title="Simulation Speed">
-          <option value="1">1 h/f</option>
-          <option value="4" selected>4 h/f</option>
-          <option value="12">12 h/f</option>
+        <select id="speed" class="speed-select" title="Playback speed: how many simulated hours pass per frame" aria-label="Playback speed">
+          <option value="1">Slow · 1 h</option>
+          <option value="4" selected>Normal · 4 h</option>
+          <option value="12">Fast · 12 h</option>
         </select>
       </div>
     </div>
@@ -583,6 +584,25 @@
 </div>
 
 <!-- Share Modal -->
+<!-- First-visit welcome (shown once; deep links and demo mode skip it) -->
+<div id="introBox" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="introTitle">
+  <div class="modal-card intro-card">
+    <div class="intro-kicker">NASA Space Apps 2026 · Lunar Landing Site Navigator</div>
+    <h2 id="introTitle">A weather forecast for Moon landings</h2>
+    <p class="meta">Near the Moon's south pole the Sun barely rises, and mountains can hide the Earth. Polaris Window uses real NASA terrain and orbit data to show when a landing site gets <b>sunlight</b> (for power) and a clear <b>view of Earth</b> (for radio contact).</p>
+    <ol class="intro-steps">
+      <li><b>Pick a location</b> on the 3D map, or open <b>Locations</b> at the top right.</li>
+      <li><b>Read its forecast:</b> sunlight and Earth view over the next year.</li>
+      <li><b>Find a Landing Date</b> to rank every landing window from 2025 to 2030.</li>
+    </ol>
+    <p class="meta">Use the timeline at the bottom to move through time and watch real shadows sweep across the craters.</p>
+    <div class="intro-actions">
+      <button id="introTour" class="primary-action">Take the 1-minute tour</button>
+      <button id="introGo" class="secondary-action-btn">Start exploring</button>
+    </div>
+  </div>
+</div>
+
 <div id="shareBox" class="modal-overlay" hidden>
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">

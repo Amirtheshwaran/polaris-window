@@ -207,7 +207,7 @@ export function renderDates() {
   };
   const row = (lbl, k, f, hi = true) => `<tr><td>${lbl}</td>${M.map(m => `<td class="${m[k] === best(k, hi) && M.length > 1 ? 'good' : ''}">${f(m[k])}</td>`).join('')}</tr>`;
 
-  $('dTable').innerHTML = `<table class="telemetry-table"><tr><th>Metric</th>${M.map((m, i) => `<th style="color:${COLORS[i]}"><a href="#" data-t="${m.a}" class="dgo">${fmtDay(tDate(m.a))}</a></th>`).join('')}</tr>` +
+  $('dTable').innerHTML = `<table class="telemetry-table"><tr><th>Metric</th>${M.map((m, i) => `<th><span class="series-key" style="background:${COLORS[i]}"></span><a href="#" data-t="${m.a}" class="dgo">${fmtDay(tDate(m.a))}</a></th>`).join('')}</tr>` +
     row('Sunlight', 'sun', pct) + row('Earth visible', 'earth', pct) + row('Sun + Earth', 'both', pct) + row('Longest night', 'maxDark', hrs, false) +
     row('Longest blackout', 'maxBlk', hrs, false) + row('Angular clearance', 'margin', v => v > 0 ? v.toFixed(1) + '°' : '–') + row('Energy', 'energyKWh', v => Math.round(v) + ' kWh') + '</table>';
 

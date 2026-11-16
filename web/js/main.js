@@ -17,7 +17,7 @@ import { renderCompare } from './compare.js';
 import { initHeatmaps, runHeat, setLayer, HPRE } from './heatmaps.js';
 import { renderValid, renderAbout } from './views/science-view.js';
 import { initShareModal, missionBrief } from './reports.js';
-import { tourStep, startTour, tourClose, demo } from './tour.js';
+import { tourStep, tourNext, startTour, tourClose, demo } from './tour.js';
 
 let rafPending = false;
 
@@ -66,6 +66,7 @@ export function update() {
   }
 
   const isDemo = /demo=1/.test(location.hash);
+  const startHash = location.hash; // captured before the app rewrites the hash with its state
 
   D.LOAD = { got: 0, total: 10.2e6 };
   const pfill = $('pfill');
@@ -119,6 +120,19 @@ export function update() {
 
   const loadingEl = $('loading');
   if (loadingEl) loadingEl.remove();
+
+  // First-visit welcome: explains the app in three steps. Skipped for deep links and demo mode.
+  const introBox = $('introBox');
+  const closeIntro = () => {
+    if (introBox) introBox.hidden = true;
+    try { localStorage.setItem('pw_intro_seen', '1'); } catch (_) {}
+  };
+  let introSeen = false;
+  try { introSeen = localStorage.getItem('pw_intro_seen') === '1'; } catch (_) {}
+  if (introBox && !isDemo && !introSeen && !/site=|tab=/.test(startHash)) introBox.hidden = false;
+  if ($('introGo')) $('introGo').onclick = closeIntro;
+  if ($('introTour')) $('introTour').onclick = () => { closeIntro(); startTour(); };
+  if (introBox) introBox.onclick = e => { if (e.target === introBox) closeIntro(); };
 
   // ------------------------------------------------------------- Event Wiring
   // Primary 3 Destinations Navigation
@@ -351,13 +365,14 @@ export function update() {
 
   // Guided Tour events
   if ($('tourBtn')) $('tourBtn').onclick = startTour;
-  if ($('tourNext')) $('tourNext').onclick = () => tourStep(1);
+  if ($('tourNext')) $('tourNext').onclick = tourNext;
   if ($('tourPrev')) $('tourPrev').onclick = () => tourStep(-1);
   if ($('tourEnd')) $('tourEnd').onclick = tourClose;
 
   // Keyboard Navigation
   addEventListener('keydown', e => {
     if (e.key === 'Escape') {
+      if (introBox && !introBox.hidden) { closeIntro(); return; }
       closeModal('shareBox');
       closeModal('settingsModal');
       if ($('secondaryMenu')) $('secondaryMenu').hidden = true;

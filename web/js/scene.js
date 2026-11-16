@@ -1022,10 +1022,17 @@ export function flyTo(s, standing, look = 'sun') {
       const radLen = camSpan * 0.82;
       const tanLen = camSpan * 0.28;
       const camY = Math.max(16, 18 + elevBoost);
+      // Near the edge of the LOLA terrain grid (beyond ~170 km), swing the camera to whichever side
+      // keeps it over terrain data, so the smooth globe beyond the grid stays out of the foreground.
+      let tanSign = 1;
+      if (rDist > 170) {
+        const edge = sg => Math.max(Math.abs(tgt.x + nx * radLen - nz * tanLen * sg), Math.abs(tgt.z + nz * radLen + nx * tanLen * sg));
+        if (edge(-1) < edge(1)) tanSign = -1;
+      }
       off = new THREE.Vector3(
-        nx * radLen - nz * tanLen,
+        nx * radLen - nz * tanLen * tanSign,
         camY,
-        nz * radLen + nx * tanLen
+        nz * radLen + nx * tanLen * tanSign
       );
     } else {
       off = camera.position.clone().sub(tgt);

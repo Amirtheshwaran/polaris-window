@@ -4,10 +4,10 @@
 Polaris Window
 
 ## High-Level Project Summary
-Polaris Window is a free, browser-based mission planner for the lunar south pole that answers the question planners actually ask: when and where should we land? It combines NASA LOLA terrain with NASA/JPL SPICE ephemeris to show, for any site and any hour from 2025 to 2030, whether the Sun (power) and Earth (direct-to-Earth comms) are above the real terrain horizon. You can watch real shadows sweep across a 3D south pole, stand at a site to see the Sun and Earth paths cross a 360° horizon, compare sites side by side, color the region with sunlight or comms heatmaps, and let the auto window finder rank the best landing dates for your mission's power and comms limits. Our illumination model reproduces NASA's published south-pole illumination map (r = 0.99) and matches JPL Horizons to 0.001°, so planners, educators and the public can trust the numbers.
+Polaris Window is a free, browser-based mission planner for the lunar south pole that answers the question planners actually ask: when and where should we land? It combines NASA LOLA terrain with NASA/JPL SPICE ephemeris to show, for any site and any hour from 2025 to 2030, whether the Sun (power) and Earth (direct-to-Earth comms) are above the real terrain horizon. Think of it as a weather forecast for Moon landings. You can watch real shadows sweep across a 3D south pole, see the Sun and Earth paths against any site's real horizon, compare sites side by side, map sunlight and comms across the region, and let the landing date finder rank the best landing windows for your mission's power and comms limits. Our illumination model reproduces NASA's published south-pole illumination map (r = 0.99) and matches JPL Horizons to 0.001°, so planners, educators and the public can trust the numbers.
 
 ## Link to Project Demo
-<YouTube link: 30-second video>
+<YouTube link: 30-second film>  (the same film plays directly at https://amirtheshwaran.github.io/polaris-window/media/polaris-window-demo.mp4)
 
 ## Link to Final Project
 https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.com/Amirtheshwaran/polaris-window)
@@ -15,20 +15,20 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 ## Detailed Project Description
 **What it does**
 - **Live 3D south pole:** 384 × 384 km of real LOLA terrain. Scrub or play the timeline and the shadows move with the true Sun position.
-- **Stand at site:** a 360° panorama of the real horizon at any site, with the Sun path (gold) and Earth path (blue) for the next lunar month. Where a path dips behind terrain, you lose power or comms. One click puts you on the surface in 3D.
-- **Auto window finder:** enter a mission length (for example 14 days), minimum sunlight %, minimum Earth visibility %, maximum continuous darkness and maximum comms blackout. It evaluates every 6-hour landing slot from 2025 to 2030 at every site and ranks the best windows.
+- **Site details & horizons:** the real terrain skyline around any site, with the Sun path (white) and Earth path (gray) for the next lunar month. Where a path dips behind terrain, you lose power or comms. "Stand at Site" puts you on the surface in 3D.
+- **Find a Landing Date:** enter a mission length (for example 14 days), minimum sunlight %, minimum Earth visibility %, maximum continuous darkness and maximum comms blackout. It evaluates every 6-hour landing slot from 2025 to 2030 at every site and ranks the best windows.
 - **Side-by-side compare:** 2 to 4 sites, or up to 4 landing dates at one site, with sunlight %, Earth visibility %, sun AND Earth %, longest darkness, longest blackout and estimated solar energy, plus charts for each lunation over a year.
 - **Heatmap mode:** colors the whole region by sunlight, Earth visibility or both, for any date range, computed live in the browser.
 - **Custom sites:** click anywhere on the terrain to add a site with full analysis.
-- **12-month landing forecast:** a calendar for each site with one colored square per day (sun and Earth, partial, or night), like a weather forecast for the Moon.
-- **Will your lander survive?** Pick a solar panel, battery and power use, and the battery is simulated hour by hour with the real sunlight at that site and date.
-- **Sight-lines and ice map:** lines from the site to the Sun and Earth show when terrain blocks them, and a one-click map shows where the Sun never shines (cold traps for water ice).
+- **12-month landing calendar:** one square per day for each site, shaded from bright (Sun and Earth all day) through partial and Sun-only to dark (night), like a weather forecast for the Moon. Click a day to jump there.
+- **Lander battery & power check:** pick a solar panel, battery and power use, and the battery is simulated hour by hour with the real sunlight at that site and date.
+- **Sight-lines and cold-trap map:** lines from the site to the Sun and Earth show when terrain blocks them, and a one-click map shows places that received no sunlight from 2025 to 2030 (candidate cold traps; sunlight alone does not establish ice).
 - **Real CLPS case study:** IM-2 Athena (2025). Its site and date were good, and it was lost to a small crater and a tip-over.
-- **Comms elevation mask (Planner mode):** require Earth to clear the terrain by 1–5°, as real antennas need, and every statistic updates.
+- **Comms elevation mask (Detailed mode, in Settings):** require Earth to clear the terrain by 1–5°, as real antennas need, and every statistic updates.
 - **Mission brief:** one click produces a printable or PDF report for the chosen site and date, with sunlight, Earth visibility, longest night and blackout, safety margin, panorama and a day-by-day table.
 - **Shareable links:** every site, date, tab and heatmap is encoded in the URL, so a teacher can send a class to the exact moment the Sun clears a crater rim. The share dialog also shows a QR code for projectors, and the guided tour can read itself aloud.
-- **Explore mode with a guided tour** for the public and classrooms, and **Planner mode** for engineers.
-- **Classroom missions (learn.html):** six 5-minute, printable missions for ages 10+. Each opens the app at the exact place and date, with a question and an answer (for example, find the crater that never sees the Sun, or be the mission planner).
+- **A first-visit welcome and a 1-minute guided tour** for the public and classrooms, and a **Detailed mode** for engineers.
+- **Classroom missions (learn.html):** nine 5-minute, printable missions for ages 10+. Each opens the app at the exact place and date, with a question and an answer (for example, find the crater that never sees the Sun, or be the mission planner).
 - **Landing safety:** a slope layer from LOLA and a "best landing spots" map (sun + Earth + ground flatter than 8°).
 
 **How it works**
@@ -41,7 +41,7 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 
 **Tools:** Python, NumPy, SciPy, Numba, SpiceyPy, Matplotlib, JavaScript, Three.js, Chart.js, GitHub Pages.
 
-**What's next:** relay-satellite comms, slope and hazard layers from LOLA, power-system sizing, and higher-resolution (5 to 20 m) DEMs for site-scale planning.
+**What's next:** relay-satellite comms, finer hazard maps (rocks and craters smaller than the 80 m grid), detailed power-system sizing, and higher-resolution (5 to 20 m) DEMs for site-scale planning.
 
 ## Use of Super Intelligence (SI)
 [Team to complete.]
@@ -61,29 +61,21 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 
 ---
 
-# 30-second demo video script (screen recording plus voiceover, with English subtitles)
+# Demo film (final)
 
-| Time | Screen | Voiceover |
-|---|---|---|
-| 0:00 | Title card over the 3D south pole | "Hi, I'm Amir from team Polaris Window." |
-| 0:02 | Timeline playing, shadows sweeping | "Landing at the Moon's south pole means fighting for sunlight and a line of sight to Earth." |
-| 0:05 | Logo + tagline | "Polaris Window: know exactly when and where to land." |
-| 0:08 | Click Connecting Ridge, then the panorama with the Sun and Earth paths | "Built on NASA's LOLA terrain and JPL ephemeris, you can stand at any site and watch the Sun and Earth cross the real horizon." |
-| 0:14 | Window finder: enter 14 days, click, ranked list | "Give it your mission length, power and comms limits, and it ranks the best landing dates." |
-| 0:19 | Heatmap sweep, then compare chart | "Compare sites, map sunlight and comms across the whole region..." |
-| 0:23 | Validation tab (r = 0.99) | "...and every result is checked against NASA's own illumination maps." |
-| 0:26 | Share link, then the 3D fly-over | "From mission planners to classrooms: pick your window to the Moon." |
-
-**Easiest way to record:** open https://amirtheshwaran.github.io/polaris-window/#demo=1 in Chrome, press F11 (fullscreen), start a screen recorder (Windows: Win+Alt+R with Xbox Game Bar; Mac: Cmd+Shift+5), then reload the page. A 30-second choreographed sequence plays with English captions built in. Trim to 30 s or less, add the voiceover (optional, since the captions already tell the story), and upload to YouTube as Public or Unlisted. Test the link in a private window. For YouTube, upload `media/demo-captions.srt` as English subtitles (it matches demo mode's timing) and use `media/youtube-thumbnail.png` as the thumbnail.
+- **File:** `demo-video/output/polaris-window-spaceapps-demo.mp4` (29.5 s, 1920×1080) with English subtitles in `demo-video/output/polaris-window-en.srt`. It also plays in the browser at https://amirtheshwaran.github.io/polaris-window/media/polaris-window-demo.mp4.
+- **Story:** the full Moon and an orbital approach to the south pole ("where, and when?"); why sunlight means power and Earth view means radio; the product (one site, its sunlight and Earth view, then Find a Landing Date and a real recommended window); NASA LOLA, NASA/JPL SPICE and the validation against NASA's published maps (r = 0.990 and 0.992); the team and challenge on the end card.
+- **YouTube:** upload the MP4, add the SRT as English subtitles, and use `media/youtube-thumbnail.png` as the thumbnail.
+- **In-app demo:** https://amirtheshwaran.github.io/polaris-window/#demo=1 plays a 30-second captioned walkthrough inside the app.
 
 ---
 
 # Pre-submit checklist (do this before clicking "Submit for Judging")
 
 - [ ] All checkpoint patches are pushed, and the GitHub Actions run "Deploy to GitHub Pages" is green. The site updates within about 10 minutes, because Pages caches files for 600 s.
-- [ ] Open https://amirtheshwaran.github.io/polaris-window/ in a **private window** on a laptop: the welcome screen appears, the guided tour runs, and the NASA check tab shows both validation figures.
+- [ ] Open https://amirtheshwaran.github.io/polaris-window/ in a **private window** on a laptop: the welcome card appears, the guided tour runs to "Finish", and How It Works shows both validation figures.
 - [ ] Open it on a **phone**: the page scrolls, and the 3D view and panorama show.
-- [ ] Demo video is **30 seconds or less**, uploaded as Public or Unlisted, with English captions (demo mode has them built in). The link opens in a private window without logging in.
+- [ ] Demo film (`demo-video/output/polaris-window-spaceapps-demo.mp4`, 29.5 s) is uploaded as Public or Unlisted with `demo-video/output/polaris-window-en.srt` as English captions. The link opens in a private window without logging in.
 - [ ] Project page: every required field is filled in, in English; "Link to Final Project" = the site URL; "Link to Project Demo" = the video; NASA Data and References sections are pasted from this file; the SI section is completed.
 - [ ] Images uploaded to the project page are JPG, PNG or GIF under 10 MB (the `media/` screenshots qualify), with no NASA logos and no people under 18.
 - [ ] Optional but recommended: request a FortiGuard web filter classification for the site URL (category: Education).

@@ -207,3 +207,13 @@ canvas.calStrip {
   min-width: 100px;
   max-width: 230px;
 }
+
+/* Comparison headers: readable text plus a small key matching each chart line */
+table.telemetry-table th { color: var(--text-secondary, #B8B6B0); }
+table.telemetry-table th .series-key {
+  display: block;
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  margin: 0 0 4px auto;
+}

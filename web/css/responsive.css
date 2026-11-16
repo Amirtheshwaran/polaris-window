@@ -136,8 +136,13 @@
     font-size: 10.5px;
   }
 
+  /* Keep Locations, Share and the menu reachable: use short nav labels */
+  nav.primary-nav .nav-full { display: none; }
+  nav.primary-nav .nav-short { display: inline; }
+
   .header-actions {
     gap: 4px;
+    flex-shrink: 0;
   }
 
   .header-pill-btn {

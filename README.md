@@ -44,7 +44,7 @@ Polaris Window is a browser-based mission planner for the lunar south pole. It u
 | **Checked against NASA** | Our sunlight map reproduces NASA PGDA's published south-pole illumination map with r = 0.990 (mean error 1.5 points), our Earth-visibility (comms) map reproduces NASA's Earth-visibility map with r = 0.992 (mean error 1.8 points), and our Sun and Earth elevations match JPL Horizons to 0.001°. |
 | **Mission brief** | One click produces a printable or PDF report for the chosen site and landing date: key numbers, safety margin, panorama, 60-day outlook and a day-by-day table. |
 | **Shareable links + QR** | Every view (site, date, tab, heatmap, custom site) is encoded in the URL. The share dialog also shows a QR code, so a teacher can put it on a projector and students open the exact moment on their phones. |
-| **Explore / Planner modes + guided tour** | A narrated guided tour for classrooms and the public, and full controls for planners. |
+| **Welcome, guided tour + Detailed mode** | A first-visit welcome card and a narrated 1-minute tour for classrooms and the public; Detailed mode (Settings) adds full controls for planners. |
 
 ## Why this is easier than existing tools
 
@@ -104,5 +104,5 @@ python pipeline/validate.py <raw_dir>
 
 ## Assumptions and limits
 
-Observer height is 2 m. The nine NASA Artemis III candidate regions (Oct 2024) use official USGS footprints (McClernan 2024, doi:10.5066/P1MEQ6UK); Mons Mouton Plateau uses an approximate 15 km box. Each region pin is our best spot inside it (most sun + Earth on slope ≤ 8°), not a NASA-designated landing point. Custom-site horizons are interpolated from the precomputed grids (120 azimuths). Power assumes a 10 m², 30%-efficient, vertical sun-tracking array. Earth counts as visible when its center is above the terrain; Planner mode can require an antenna elevation mask of 1–5°. The tool doesn't model relay satellites (only direct-to-Earth) or hazards smaller than the 80 m terrain grid (rocks, small craters).
+Observer height is 2 m. The nine NASA Artemis III candidate regions (Oct 2024) use official USGS footprints (McClernan 2024, doi:10.5066/P1MEQ6UK); Mons Mouton Plateau uses an approximate 15 km box. Each region pin is our best spot inside it (most sun + Earth on slope ≤ 8°), not a NASA-designated landing point. Custom-site horizons are interpolated from the precomputed grids (120 azimuths). Power assumes a 10 m², 30%-efficient, vertical sun-tracking array. Earth counts as visible when its center is above the terrain; Detailed mode can require an antenna elevation mask of 1–5°. The tool doesn't model relay satellites (only direct-to-Earth) or hazards smaller than the 80 m terrain grid (rocks, small craters).
 

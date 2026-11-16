@@ -196,3 +196,6 @@ nav.primary-nav button.active {
   background: var(--border-subtle);
   margin: 4px 0;
 }
+
+/* Short navigation labels for narrow phones (see responsive.css) */
+nav.primary-nav .nav-short { display: none; }

@@ -47,7 +47,7 @@ export function renderCompare() {
   const row = (lbl, k, f, hi = true) => `<tr><td>${lbl}</td>${M.map(m => `<td class="${m[k] === best(k, hi) && S.length > 1 ? 'good' : ''}">${f(m[k])}</td>`).join('')}</tr>`;
 
   if ($('cmpTable')) {
-    $('cmpTable').innerHTML = `<table class="telemetry-table"><tr><th>Site</th>${S.map((s, i) => `<th style="color:${COLORS[i]}">${s.name}</th>`).join('')}</tr>` +
+    $('cmpTable').innerHTML = `<table class="telemetry-table"><tr><th>Site</th>${S.map((s, i) => `<th><span class="series-key" style="background:${COLORS[i]}"></span>${s.name}</th>`).join('')}</tr>` +
       row('Sunlight', 'sun', pct) + row('Earth visible', 'earth', pct) + row('Sun + Earth', 'both', pct) + row('Longest darkness', 'maxDark', hrs, false) +
       row('Longest blackout', 'maxBlk', hrs, false) + row('Avg power (10 m²)', 'powerW', v => Math.round(v) + ' W') + row('Total Energy', 'energyKWh', v => (v / 1000).toFixed(1) + ' MWh') + '</table>';
   }

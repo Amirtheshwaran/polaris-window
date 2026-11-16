@@ -101,6 +101,17 @@ varying vec2 vM;
 varying vec3 vWorldPos;
 varying vec3 vViewDir;
 
+// Macroscopic-roughness shadowing (Smith 1967 / Hapke 1984): the fraction of a rough surface with
+// RMS slope tan(20 deg) that a Sun at incidence i still reaches. Applied wherever the renderer only
+// knows a smooth sphere normal (the globe, and the globe-matched outer rim of the terrain); the LOLA
+// terrain itself uses its real ray-traced horizon shadows instead.
+float roughLit(float mu0) {
+  if (mu0 <= 0.0) return 0.0;
+  float t = sqrt(max(1.0 - mu0 * mu0, 0.0)) / mu0;
+  float a = 0.364 * t;
+  return 2.0 / (1.0 + sqrt(1.0 + a * a));
+}
+
 void main() {
   bool inCore = abs(vM.x) < coreHalf * 0.995 && abs(vM.y) < coreHalf * 0.995;
   if (isCore == 0 && inCore) discard;
@@ -110,14 +121,10 @@ void main() {
   // Outer boundary clipping at 190 km
   if (isCore == 0 && rho > 190000.0) discard;
 
-  float distToCam = length(vViewDir);
-
-  // Smooth distance & radial handoff parameters
-  // Close range (dist <= 120 km): 100% local LOLA topography and horizon raytracing
-  // Outer perimeter (rho >= 185 km) or orbital range (dist >= 440 km): exact spherical globe match
-  float distLod = smoothstep(120.0, 440.0, distToCam);
-  float radBlend = isCore == 1 ? 0.0 : smoothstep(135000.0, 185000.0, rho);
-  float blendT = max(distLod, radBlend);
+  // Deterministic geographic handoff: full LOLA relief and ray-traced horizon shadows inside 135 km,
+  // blending to the globe's exact shading at the 185-190 km rim. No camera-distance terms, so the
+  // surface looks the same while zooming in and out.
+  float blendT = isCore == 1 ? 0.0 : smoothstep(135000.0, 185000.0, rho);
 
   float hh = isCore == 1 ? coreHalf : regHalf;
   vec2 uv = vec2((vM.x + hh) / (2.0 * hh), (hh - vM.y) / (2.0 * hh));
@@ -131,15 +138,6 @@ void main() {
   const float R_KM = 1737.4;
   vec3 sphereN = normalize(vec3(vWorldPos.x, vWorldPos.y + R_KM, vWorldPos.z));
   vec3 localN = normalize(sphereN + vec3(-grad.x * exag, 0.0, grad.y * exag));
-
-  // Regolith micro-roughness in Balanced & Cinematic modes
-  if (quality >= 1) {
-    vec2 microUv = vM * 0.05;
-    float micro1 = sin(microUv.x * 12.0 + microUv.y * 7.0) * cos(microUv.x * 5.0 - microUv.y * 11.0);
-    float micro2 = sin(microUv.x * 37.0 - microUv.y * 23.0) * cos(microUv.x * 19.0 + microUv.y * 31.0);
-    float microFade = smoothstep(60.0, 5.0, distToCam);
-    localN = normalize(localN + vec3(micro1, 0.0, micro2) * (0.05 * microFade));
-  }
 
   // Smoothly blend local gradient normal into exact sphere normal
   vec3 N = normalize(mix(localN, sphereN, blendT));
@@ -165,7 +163,8 @@ void main() {
   float lit = isCore == 1 ? texture2D(illumC, uv).r : texture2D(illumR, uv).r;
   float contactShadow = smoothstep(-0.015, 0.035, dot(N, L));
   float localShadow = lit * contactShadow;
-  float totalShadow = mix(localShadow, contactShadow, blendT);
+  // the globe-matched rim uses the same roughness shadowing as the globe
+  float totalShadow = mix(localShadow, contactShadow * roughLit(dot(sphereN, L)), blendT);
 
   // Authentic NASA LROC global lunar surface reflectance matching the globe
   vec3 regolithBase;
@@ -211,15 +210,8 @@ void main() {
     finalColor = heatFinal;
   }
 
-  // Seamless radial and distance-based opacity dissolution
-  // Inside candidate science sites (rho <= 175 km, dist <= 340 km), terrain is 100% solid & opaque.
-  // Over rho in [175 km, 189 km] and dist in [340 km, 440 km], terrain smoothly dissolves into meshGlobe.
-  float distAlpha = 1.0 - smoothstep(340.0, 440.0, distToCam);
-  float radAlpha = isCore == 1 ? 1.0 : (1.0 - smoothstep(175000.0, 189000.0, rho));
-  float edgeAlpha = distAlpha * radAlpha;
-  if (edgeAlpha <= 0.002) discard;
-
-  gl_FragColor = vec4(finalColor, edgeAlpha);
+  // Opaque: the terrain owns rho < 190 km at every distance; the globe cap is cut out to match.
+  gl_FragColor = vec4(finalColor, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }
@@ -254,14 +246,22 @@ varying vec3 vWorldPos;
 varying vec3 vViewDir;
 varying vec2 vUv;
 
+// Macroscopic-roughness shadowing (Smith 1967 / Hapke 1984): the fraction of a rough surface with
+// RMS slope tan(20 deg) that a Sun at incidence i still reaches. Applied wherever the renderer only
+// knows a smooth sphere normal (the globe, and the globe-matched outer rim of the terrain); the LOLA
+// terrain itself uses its real ray-traced horizon shadows instead.
+float roughLit(float mu0) {
+  if (mu0 <= 0.0) return 0.0;
+  float t = sqrt(max(1.0 - mu0 * mu0, 0.0)) / mu0;
+  float a = 0.364 * t;
+  return 2.0 / (1.0 + sqrt(1.0 + a * a));
+}
+
 void main() {
-  // Discard south-pole cap at close/medium range (distToCam < 380 km) where high-resolution LOLA 3D
-  // candidate landing sites render (rho < 185 km, cosTheta > 0.9943), preventing the smooth sphere
-  // from clipping crater floors.
-  // At orbital distances (distToCam >= 380 km), the sphere is 100% complete, unbroken, and solid.
-  float distToCam = length(vViewDir);
+  // The LOLA terrain owns everything within 190 km of the pole at every camera distance; cut exactly
+  // that disc (horizontal radius, same measure the terrain uses) with a 0.2 km overlap, no gap.
   float cosTheta = (vWorldPos.y + 1737.4) / 1737.4;
-  if (cosTheta > 0.9943 && distToCam < 380.0) discard;
+  if (cosTheta > 0.99 && length(vWorldPos.xz) < 189.8) discard;
 
   vec3 N = normalize(vN);
   vec3 V = normalize(vViewDir);
@@ -282,7 +282,7 @@ void main() {
   if (quality == 0) opposition = 1.0;
 
   // Real planetary terminator shadow with smooth physical penumbra
-  float sunTerm = smoothstep(-0.015, 0.035, dot(N, L));
+  float sunTerm = smoothstep(-0.015, 0.035, dot(N, L)) * roughLit(dot(N, L));
   float earthDot = max(dot(N, E), 0.0);
   vec3 earthshineCol = vec3(0.04, 0.055, 0.08) * earthDot;
   vec3 starlight = vec3(0.003, 0.0035, 0.004);
@@ -398,7 +398,7 @@ function buildMesh(heights, half, n, isCore) {
     uniforms: { ...U, isCore: { value: isCore } },
     vertexShader: vs,
     fragmentShader: fs,
-    transparent: true,
+    transparent: false,
     depthWrite: true,
     polygonOffset: true,
     polygonOffsetFactor: isCore === 1 ? -2.0 : -1.0,
@@ -462,8 +462,10 @@ function buildGlobe() {
     for (let j = 0; j < nPhi; j++) {
       const a = i * (nPhi + 1) + j;
       const b = (i + 1) * (nPhi + 1) + j;
-      idx.push(a, b, a + 1);
-      idx.push(a + 1, b, b + 1);
+      // Counter-clockwise seen from outside, so front faces point away from the Moon's centre.
+      // (The previous order faced inward: the near side was culled and the far side's interior drawn.)
+      idx.push(a, a + 1, b);
+      idx.push(a + 1, b + 1, b);
     }
   }
 

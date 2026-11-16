@@ -1,31 +1,43 @@
 1
-00:00:00,000 --> 00:00:02,000
-Hi, we are team Polaris Window.
+00:00:00,050 --> 00:00:02,600
+Landing on the moon isn't just about where.
 
 2
-00:00:02,000 --> 00:00:05,000
-Landing at the Moon's south pole means fighting for sunlight and a line of sight to Earth.
+00:00:02,930 --> 00:00:04,070
+It's about when.
 
 3
-00:00:05,000 --> 00:00:08,500
-Polaris Window: know exactly when and where to land.
+00:00:04,500 --> 00:00:07,570
+At the lunar south pole, sunlight means power.
 
 4
-00:00:08,500 --> 00:00:14,000
-Built on NASA LOLA terrain and JPL ephemeris: stand at any site and watch the Sun and Earth cross the real horizon.
+00:00:07,940 --> 00:00:10,390
+A clear view of Earth means communication.
 
 5
-00:00:14,000 --> 00:00:19,000
-Enter your mission length and power and comms limits, and it ranks the best landing dates.
+00:00:10,870 --> 00:00:12,350
+Meet Polaris Window.
 
 6
-00:00:19,000 --> 00:00:23,000
-Map sunlight, Earth contact and safe flat ground across the whole region...
+00:00:12,630 --> 00:00:15,140
+Built using NASA terrain and orbital data,
 
 7
-00:00:23,000 --> 00:00:26,000
-...and every result is checked against NASA's own illumination maps and JPL Horizons.
+00:00:15,320 --> 00:00:19,020
+it lets you explore real lunar landscapes, compare locations,
 
 8
-00:00:26,000 --> 00:00:30,000
-From mission planners to classrooms: pick your window to the Moon.
+00:00:19,180 --> 00:00:21,380
+and discover promising landing windows.
+
+9
+00:00:21,740 --> 00:00:25,140
+From complex scientific data to clearer mission decisions.
+
+10
+00:00:25,480 --> 00:00:26,520
+Polaris Window.
+
+11
+00:00:26,860 --> 00:00:28,440
+Find your window to the moon.

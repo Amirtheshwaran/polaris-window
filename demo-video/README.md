@@ -1,6 +1,8 @@
 # Polaris Window: Space Apps demo film
 
-Final film: `output/polaris-window-spaceapps-demo.mp4` (1920×1080, 30 fps, H.264 + AAC, yuv420p, 29.55 s). English subtitles: `output/polaris-window-en.srt`.
+Final film: `output/polaris-window-spaceapps-demo-FINAL.mp4` (1920×1080, 30 fps, H.264 + AAC, yuv420p, 29.5 s video / 29.55 s file). English subtitles: `output/polaris-window-spaceapps-demo-FINAL.srt`. Earlier cuts: `output/polaris-window-spaceapps-demo.mp4` and `output/polaris-window-spaceapps-demo-v1.mp4`.
+
+Text-collision check: render with `--props='{"check":true}' --log=verbose` and every frame logs `TXTCHECK` lines (overlaps, title-safe violations, text under 20 px); the final cut logs none across all 885 frames.
 
 ## Structure
 - `src/PolarisFilm.tsx`: the six scenes, timed to the measured narration

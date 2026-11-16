@@ -63,7 +63,7 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 
 # Demo film (final)
 
-- **File:** `demo-video/output/polaris-window-spaceapps-demo.mp4` (29.5 s, 1920×1080) with English subtitles in `demo-video/output/polaris-window-en.srt`. It also plays in the browser at https://amirtheshwaran.github.io/polaris-window/media/polaris-window-demo.mp4.
+- **File:** `demo-video/output/polaris-window-spaceapps-demo-FINAL.mp4` (29.5 s, 1920×1080) with English subtitles in `demo-video/output/polaris-window-spaceapps-demo-FINAL.srt`. It also plays in the browser at https://amirtheshwaran.github.io/polaris-window/media/polaris-window-demo.mp4.
 - **Story:** the full Moon and an orbital approach to the south pole ("where, and when?"); why sunlight means power and Earth view means radio; the product (one site, its sunlight and Earth view, then Find a Landing Date and a real recommended window); NASA LOLA, NASA/JPL SPICE and the validation against NASA's published maps (r = 0.990 and 0.992); the team and challenge on the end card.
 - **YouTube:** upload the MP4, add the SRT as English subtitles, and use `media/youtube-thumbnail.png` as the thumbnail.
 - **In-app demo:** https://amirtheshwaran.github.io/polaris-window/#demo=1 plays a 30-second captioned walkthrough inside the app.
@@ -75,7 +75,7 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 - [ ] All checkpoint patches are pushed, and the GitHub Actions run "Deploy to GitHub Pages" is green. The site updates within about 10 minutes, because Pages caches files for 600 s.
 - [ ] Open https://amirtheshwaran.github.io/polaris-window/ in a **private window** on a laptop: the welcome card appears, the guided tour runs to "Finish", and How It Works shows both validation figures.
 - [ ] Open it on a **phone**: the page scrolls, and the 3D view and panorama show.
-- [ ] Demo film (`demo-video/output/polaris-window-spaceapps-demo.mp4`, 29.5 s) is uploaded as Public or Unlisted with `demo-video/output/polaris-window-en.srt` as English captions. The link opens in a private window without logging in.
+- [ ] Demo film (`demo-video/output/polaris-window-spaceapps-demo-FINAL.mp4`, 29.5 s) is uploaded as Public or Unlisted with `demo-video/output/polaris-window-spaceapps-demo-FINAL.srt` as English captions. The link opens in a private window without logging in.
 - [ ] Project page: every required field is filled in, in English; "Link to Final Project" = the site URL; "Link to Project Demo" = the video; NASA Data and References sections are pasted from this file; the SI section is completed.
 - [ ] Images uploaded to the project page are JPG, PNG or GIF under 10 MB (the `media/` screenshots qualify), with no NASA logos and no people under 18.
 - [ ] Optional but recommended: request a FortiGuard web filter classification for the site URL (category: Education).

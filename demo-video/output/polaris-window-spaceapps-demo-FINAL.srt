@@ -1,0 +1,43 @@
+1
+00:00:00,050 --> 00:00:02,600
+Landing on the moon isn't just about where.
+
+2
+00:00:02,930 --> 00:00:04,070
+It's about when.
+
+3
+00:00:04,500 --> 00:00:07,570
+At the lunar south pole, sunlight means power.
+
+4
+00:00:07,940 --> 00:00:10,390
+A clear view of Earth means communication.
+
+5
+00:00:10,870 --> 00:00:12,350
+Meet Polaris Window.
+
+6
+00:00:12,630 --> 00:00:15,140
+Built using NASA terrain and orbital data,
+
+7
+00:00:15,320 --> 00:00:19,020
+it lets you explore real lunar landscapes, compare locations,
+
+8
+00:00:19,180 --> 00:00:21,380
+and discover promising landing windows.
+
+9
+00:00:21,740 --> 00:00:25,140
+From complex scientific data to clearer mission decisions.
+
+10
+00:00:25,480 --> 00:00:26,520
+Polaris Window.
+
+11
+00:00:26,860 --> 00:00:28,440
+Find your window to the moon.

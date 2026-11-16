@@ -41,7 +41,7 @@ Polaris Window is a browser-based mission planner for the lunar south pole. It u
 | **Sight-lines and cold-trap map** | Lines from the selected site to the Sun and Earth (solid = clear, dashed = blocked by terrain), plus a one-click map of places that received no sunlight from 2025 to 2030 (candidate cold traps; this does not by itself establish ice). |
 | **Real CLPS case study** | IM-2 *Athena* (March 2025): our model shows its site and date were excellent, and that it was lost to a crater too small for 80 m maps, which explains why finer hazard maps come next. |
 | **Drop your own site** | Click anywhere on the terrain. Custom sites get full statistics, a panorama and window ranking. |
-| **Checked against NASA** | Our sunlight map reproduces NASA PGDA's published south-pole illumination map with r = 0.990 (mean error 1.5 points), our Earth-visibility (comms) map reproduces NASA's Earth-visibility map with r = 0.992 (mean error 1.8 points), and our Sun and Earth elevations match JPL Horizons to 0.001°. |
+| **Checked against NASA maps** | Our sunlight map reproduces NASA PGDA's published south-pole illumination map with r = 0.990 (mean error 1.5 points), our Earth-visibility map reproduces NASA's Earth-visibility map with r = 0.992 (mean error 1.8 points), and our Sun and Earth elevations match JPL Horizons to 0.001°. |
 | **Mission brief** | One click produces a printable or PDF report for the chosen site and landing date: key numbers, safety margin, panorama, 60-day outlook and a day-by-day table. |
 | **Shareable links + QR** | Every view (site, date, tab, heatmap, custom site) is encoded in the URL. The share dialog also shows a QR code, so a teacher can put it on a projector and students open the exact moment on their phones. |
 | **Welcome, guided tour + Detailed mode** | A first-visit welcome card and a narrated 1-minute tour for classrooms and the public; Detailed mode (Settings) adds full controls for planners. |
@@ -57,7 +57,7 @@ The challenge notes that tools for Sun and Earth positions exist, but their inte
 | Which landing date is best for a 14-day mission? | Script thousands of ephemeris queries plus horizon checks | Enter the mission rules: every date from 2025 to 2030 is ranked in about a second |
 | Which of the Artemis III regions is best? | Repeat all of the above for each region | Compare up to 4 sites side by side, or ask the window finder for all 9 regions at once |
 | Can my lander survive the night? | Build your own power model | Move three sliders |
-| Can I trust the numbers? | n/a | Checked against NASA's published sunlight and Earth-visibility maps (r = 0.99) and JPL Horizons (0.001°) |
+| How is accuracy verified? | Independent custom modeling required | Cross-checked against NASA's published sunlight and Earth-visibility maps (r = 0.99) and JPL Horizons (0.001°) |
 
 ## How it works
 
@@ -105,4 +105,6 @@ python pipeline/validate.py <raw_dir>
 ## Assumptions and limits
 
 Observer height is 2 m. The nine NASA Artemis III candidate regions (Oct 2024) use official USGS footprints (McClernan 2024, doi:10.5066/P1MEQ6UK); Mons Mouton Plateau uses an approximate 15 km box. Each region pin is our best spot inside it (most sun + Earth on slope ≤ 8°), not a NASA-designated landing point. Custom-site horizons are interpolated from the precomputed grids (120 azimuths). Power assumes a 10 m², 30%-efficient, vertical sun-tracking array. Earth counts as visible when its center is above the terrain; Detailed mode can require an antenna elevation mask of 1–5°. The tool doesn't model relay satellites (only direct-to-Earth) or hazards smaller than the 80 m terrain grid (rocks, small craters).
+
+**Scientific Scope & Non-Endorsement:** Polaris Window is an educational and mission-feasibility exploration tool developed for the NASA Space Apps Challenge 2026. It is not an operational flight computer, does not evaluate sub-80 m micro-hazards (such as boulders, steep micro-slopes, or surface regolith stability), and does not imply NASA endorsement, mission flight readiness, or guaranteed landing safety.
 

@@ -4,7 +4,7 @@
 Polaris Window
 
 ## High-Level Project Summary
-Polaris Window is a free, browser-based mission planner for the lunar south pole that answers the question planners actually ask: when and where should we land? It combines NASA LOLA terrain with NASA/JPL SPICE ephemeris to show, for any site and any hour from 2025 to 2030, whether the Sun (power) and Earth (direct-to-Earth comms) are above the real terrain horizon. Think of it as a weather forecast for Moon landings. You can watch real shadows sweep across a 3D south pole, see the Sun and Earth paths against any site's real horizon, compare sites side by side, map sunlight and comms across the region, and let the landing date finder rank the best landing windows for your mission's power and comms limits. Our illumination model reproduces NASA's published south-pole illumination map (r = 0.99) and matches JPL Horizons to 0.001°, so planners, educators and the public can trust the numbers.
+Polaris Window is a free, browser-based mission planner for the lunar south pole that answers the question planners actually ask: when and where should we land? It combines NASA LOLA terrain with NASA/JPL SPICE ephemeris to show, for any site and any hour from 2025 to 2030, whether the Sun (power) and Earth (direct-to-Earth comms) are above the real terrain horizon. Think of it as a weather forecast for Moon landings. You can watch real shadows sweep across a 3D south pole, see the Sun and Earth paths against any site's real horizon, compare sites side by side, map sunlight and comms across the region, and let the landing date finder rank the best landing windows for your mission's power and comms limits. Our illumination model reproduces NASA's published south-pole illumination map (r = 0.99) and matches JPL Horizons to 0.001°, providing an independently verifiable baseline for mission planning, education, and public exploration.
 
 ## Link to Project Demo
 <YouTube link: 30-second film>  (the same film plays directly at https://amirtheshwaran.github.io/polaris-window/media/polaris-window-demo.mp4)
@@ -29,7 +29,9 @@ https://amirtheshwaran.github.io/polaris-window/  (source code: https://github.c
 - **Shareable links:** every site, date, tab and heatmap is encoded in the URL, so a teacher can send a class to the exact moment the Sun clears a crater rim. The share dialog also shows a QR code for projectors, and the guided tour can read itself aloud.
 - **A first-visit welcome and a 1-minute guided tour** for the public and classrooms, and a **Detailed mode** for engineers.
 - **Classroom missions (learn.html):** nine 5-minute, printable missions for ages 10+. Each opens the app at the exact place and date, with a question and an answer (for example, find the crater that never sees the Sun, or be the mission planner).
-- **Landing safety:** a slope layer from LOLA and a "best landing spots" map (sun + Earth + ground flatter than 8°).
+- **Terrain slope screening:** a slope layer from LOLA and a candidate landing spots map (sun + Earth + ground flatter than 8°).
+
+**Scientific Scope & Non-Endorsement:** Polaris Window is an educational and mission-feasibility exploration tool developed for the NASA Space Apps Challenge 2026. It is not an operational flight computer, does not evaluate sub-80 m micro-hazards (such as boulders, steep micro-slopes, or surface regolith stability), and does not imply NASA endorsement, mission flight readiness, or guaranteed landing safety.
 
 **How it works**
 1. A Python pipeline reads the LOLA LDEM_80S_80M DEM (80 m/pixel) and ray-marches every terrain point's horizon in 120 to 720 directions out to 220 km, including lunar curvature (131,000 grid points plus 8 named sites). It's accelerated with Numba.

@@ -85,7 +85,7 @@ export function runWindows() {
         <div class="winner-card-title">${best.s.name} · Landing ${d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}</div>
         <div class="winner-card-body">
           <p style="margin:4px 0 8px 0;color:var(--text-primary);font-size:12px;line-height:1.45;">
-            <b>Why this window ranks #1:</b> Provides ${pct(w.sun)} continuous sunlight for solar power generation and ${pct(w.earth)} direct radio line-of-sight to Earth across the entire ${c.days}-day mission sortie, with continuous night limited to ${hrs(w.maxDark)}.
+            <b>Why this window ranks #1:</b> Provides ${pct(w.sun)} cumulative mission sunlight for solar power generation and ${pct(w.earth)} direct radio line-of-sight to Earth across the ${c.days}-day mission sortie, with longest single night limited to ${hrs(w.maxDark)}.
           </p>
           <div style="display:flex;gap:12px;background:var(--obsidian-surface-3);padding:8px 12px;border-radius:var(--radius-sm);margin-bottom:8px;font-size:11px;">
             <div><span style="color:var(--text-muted);display:block;font-size:10px;">MISSION SUNLIGHT (${c.days}d)</span><b>${pct(w.sun)}</b></div>
